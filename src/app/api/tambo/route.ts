@@ -9,11 +9,6 @@ import { HOLOCRON_AGENT_ID } from '@/mastra/agents/holocron-agent';
 
 export const runtime = 'nodejs';
 
-const [nodeMajor, nodeMinor] = process.versions.node.split('.').map((part) => Number.parseInt(part, 10));
-if (nodeMajor < 22 || (nodeMajor === 22 && nodeMinor < 13)) {
-  throw new Error('Mastra /api/tambo route requires Node.js >= 22.13.0.');
-}
-
 const jsonValueSchema: z.ZodType<unknown> = z.lazy(() =>
   z.union([z.string(), z.number(), z.boolean(), z.null(), z.array(jsonValueSchema), z.record(jsonValueSchema)])
 );
@@ -40,6 +35,11 @@ const chatParamsSchema: z.ZodType<ChatStreamHandlerParams<UIMessage>> = z
   });
 
 export async function POST(req: Request) {
+  const [nodeMajor, nodeMinor] = process.versions.node.split('.').map((part) => Number.parseInt(part, 10));
+  if (nodeMajor < 22 || (nodeMajor === 22 && nodeMinor < 13)) {
+    return new Response('Mastra /api/tambo route requires Node.js >= 22.13.0.', { status: 500 });
+  }
+
   if (!process.env.OPENAI_API_KEY) {
     return new Response('Server misconfiguration: OPENAI_API_KEY is not set.', { status: 500 });
   }
