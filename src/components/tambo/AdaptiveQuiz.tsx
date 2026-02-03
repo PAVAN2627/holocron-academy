@@ -27,12 +27,13 @@ function buildQuizSchema(questions: QuizQuestion[]) {
   const shape: Record<string, z.ZodTypeAny> = {};
 
   for (const question of questions) {
-    if (question.options.length >= 1) {
-      const [first, ...rest] = question.options;
-      shape[question.id] = z.enum([first, ...rest] as [string, ...string[]]);
-    } else {
-      shape[question.id] = z.string().min(1);
+    if (question.options.length === 0) {
+      shape[question.id] = z.never();
+      continue;
     }
+
+    const [first, ...rest] = question.options;
+    shape[question.id] = z.enum([first, ...rest] as [string, ...string[]]);
   }
 
   return z.object(shape);
@@ -60,8 +61,21 @@ export function AdaptiveQuiz({
   }, [schema]);
 
   const totalCount = questions.length;
+  const hasOptionlessQuestion = questions.some((q) => q.options.length === 0);
 
   function submit() {
+    if (totalCount === 0) {
+      setValidationError("This quiz has no questions configured.");
+      setResult(null);
+      return;
+    }
+
+    if (hasOptionlessQuestion) {
+      setValidationError("This quiz is misconfigured (a question has no options).");
+      setResult(null);
+      return;
+    }
+
     const parsed = schema.safeParse(answers);
 
     if (!parsed.success) {

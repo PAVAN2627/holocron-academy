@@ -12,7 +12,7 @@ export function AppProviders({
   children: ReactNode;
   tamboApiKey: string | null;
 }) {
-  if (!tamboApiKey) return children;
+  if (!tamboApiKey) return <>{children}</>;
 
   return (
     <TamboProvider apiKey={tamboApiKey} components={tamboComponents}>

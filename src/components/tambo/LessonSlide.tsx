@@ -24,7 +24,7 @@ export function LessonSlide({ title, summary, highlights }: LessonSlideProps) {
       <CardContent>
         <ul className="list-disc space-y-2 pl-5 text-sm text-emerald-100/80">
           {highlights.map((h, i) => (
-            <li key={i}>{h}</li>
+            <li key={`${i}-${h}`}>{h}</li>
           ))}
         </ul>
       </CardContent>

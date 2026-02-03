@@ -28,6 +28,11 @@ function isThreadMessage(m: unknown): m is ThreadMessage {
 function getTextParts(content: unknown) {
   if (typeof content === "string") return content;
 
+  if (content !== null && typeof content === "object" && "text" in content) {
+    const text = (content as { text?: unknown }).text;
+    if (typeof text === "string" && text.trim().length > 0) return text;
+  }
+
   if (Array.isArray(content)) {
     const textSegments = content
       .filter(
@@ -44,7 +49,11 @@ function getTextParts(content: unknown) {
     return textSegments.length ? textSegments.join("\n") : null;
   }
 
-  return null;
+  try {
+    return JSON.stringify(content, null, 2);
+  } catch {
+    return null;
+  }
 }
 
 export function TamboChat() {
