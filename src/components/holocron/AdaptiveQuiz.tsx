@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { z } from 'zod';
 
 import { Badge } from '@/components/ui/badge';
@@ -59,6 +59,8 @@ export function AdaptiveQuiz({
 }: AdaptiveQuizProps) {
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [sithModeEnabled, setSithModeEnabled] = useState(false);
+  const [sithUnlocked, setSithUnlocked] = useState(false);
 
   const score = useMemo(() => {
     const total = questions.length;
@@ -77,6 +79,17 @@ export function AdaptiveQuiz({
     return questions.filter((q) => answers[q.id] !== q.correctIndex);
   }, [answers, questions, score]);
 
+  const hasMissedQuestion = submitted && missed.length > 0;
+
+  useEffect(() => {
+    if (!sithUnlocked && hasMissedQuestion) {
+      setSithUnlocked(true);
+      setSithModeEnabled(true);
+    }
+  }, [hasMissedQuestion, sithUnlocked]);
+
+  const isSithTheme = sithUnlocked && sithModeEnabled;
+
   const shouldRemediate = score ? score.percent < passingScorePercent : false;
   const remediationSlide = useMemo(() => {
     if (!shouldRemediate) return null;
@@ -87,17 +100,48 @@ export function AdaptiveQuiz({
     return remediation ?? null;
   }, [missed, remediation, shouldRemediate]);
 
+  const statusBadgeVariant = submitted ? (shouldRemediate ? 'destructive' : 'secondary') : 'secondary';
+  const statusBadgeClassName = cn(
+    isSithTheme && 'border-destructive/55 bg-destructive/10 text-destructive-foreground',
+    !isSithTheme && !shouldRemediate && 'border-sky-500/30 bg-sky-500/10 text-sky-100'
+  );
+
+  const sithToggleLabel = `Sith Mode: ${sithModeEnabled ? 'On' : 'Off'}`;
+  const sithToggleVariant = isSithTheme ? 'destructive' : 'outline';
+  const sithToggleClassName = cn(
+    !isSithTheme && 'border-sky-500/30 text-sky-100 hover:bg-sky-500/10',
+    !sithUnlocked && 'cursor-not-allowed opacity-60'
+  );
+
+  const choiceHoverClassName = isSithTheme ? 'hover:bg-destructive/10' : 'hover:bg-sky-500/10';
+  const choiceSelectedClassName = isSithTheme ? 'border-destructive/60 bg-destructive/10' : 'border-sky-400/60 bg-sky-500/10';
+  const choiceCorrectRevealClassName = isSithTheme ? 'border-destructive/60' : 'border-sky-400/60';
+
   return (
-    <Card>
+    <Card className={cn('terminal-overlay', isSithTheme ? 'border-destructive/55' : 'border-sky-500/30')}>
       <CardHeader>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <CardTitle className="truncate">{title}</CardTitle>
+            <CardTitle className={cn('truncate', isSithTheme ? 'text-destructive' : 'text-sky-100')}>{title}</CardTitle>
             {description ? <CardDescription>{description}</CardDescription> : null}
           </div>
-          <Badge variant={submitted ? (shouldRemediate ? 'destructive' : 'default') : 'secondary'}>
-            {submitted ? (shouldRemediate ? 'Needs review' : 'Passed') : 'Quiz'}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant={statusBadgeVariant} className={statusBadgeClassName}>
+              {submitted ? (shouldRemediate ? 'Needs review' : 'Passed') : 'Quiz'}
+            </Badge>
+            <Button
+              type="button"
+              size="sm"
+              variant={sithToggleVariant}
+              className={sithToggleClassName}
+              disabled={!sithUnlocked}
+              onClick={() => {
+                setSithModeEnabled((prev) => !prev);
+              }}
+            >
+              {sithToggleLabel}
+            </Button>
+          </div>
         </div>
       </CardHeader>
 
@@ -130,9 +174,9 @@ export function AdaptiveQuiz({
                       }}
                       className={cn(
                         'rounded-md border bg-card px-3 py-2 text-left text-sm transition-colors',
-                        'hover:bg-accent/40',
-                        isSelected && 'border-ring bg-accent/30',
-                        submitted && !isCorrect && choiceIndex === q.correctIndex && 'border-ring',
+                        choiceHoverClassName,
+                        isSelected && choiceSelectedClassName,
+                        submitted && !isCorrect && choiceIndex === q.correctIndex && choiceCorrectRevealClassName,
                         submitted && isSelected && !isCorrect && 'border-destructive/60'
                       )}
                     >
@@ -176,6 +220,8 @@ export function AdaptiveQuiz({
               onClick={() => {
                 setAnswers({});
                 setSubmitted(false);
+                setSithModeEnabled(false);
+                setSithUnlocked(false);
               }}
             >
               Reset
