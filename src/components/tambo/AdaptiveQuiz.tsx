@@ -44,6 +44,7 @@ export function AdaptiveQuiz({
   passThreshold = 60,
   onScore,
 }: AdaptiveQuizProps) {
+  const effectiveThreshold = Math.min(100, Math.max(0, passThreshold));
   const schema = useMemo(() => buildQuizSchema(questions), [questions]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [result, setResult] = useState<
@@ -76,14 +77,16 @@ export function AdaptiveQuiz({
   }
 
   const showLessonSlide =
-    result !== null && result.totalCount > 0 && result.scorePercent < passThreshold;
+    result !== null &&
+    result.totalCount > 0 &&
+    result.scorePercent < effectiveThreshold;
 
   return (
     <Card className="border-emerald-500/25 bg-card/60">
       <CardHeader className="space-y-1">
         <CardTitle className="text-base text-emerald-100">{title}</CardTitle>
         <p className="text-sm text-emerald-100/70">
-          Score below {passThreshold}% triggers a lesson slide.
+          Score below {effectiveThreshold}% triggers a lesson slide.
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
