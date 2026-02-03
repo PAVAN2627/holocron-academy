@@ -50,7 +50,8 @@ function getTextParts(content: unknown) {
   }
 
   try {
-    return JSON.stringify(content, null, 2);
+    const json = JSON.stringify(content, null, 2);
+    return json.length > 1000 ? json.slice(0, 1000) + "\n…(truncated)" : json;
   } catch {
     return null;
   }

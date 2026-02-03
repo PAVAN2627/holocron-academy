@@ -76,6 +76,18 @@ export function AdaptiveQuiz({
       return;
     }
 
+    const invalidCorrectOption = questions.find(
+      (q) => !q.options.includes(q.correctOption),
+    );
+
+    if (invalidCorrectOption) {
+      setValidationError(
+        `Quiz misconfigured: correctOption for "${invalidCorrectOption.id}" is not in options.`,
+      );
+      setResult(null);
+      return;
+    }
+
     const parsed = schema.safeParse(answers);
 
     if (!parsed.success) {

@@ -10,6 +10,7 @@ The core idea: register learning modules as **generative UI components** with Ta
 - Tailwind CSS
 - shadcn/ui
 - Tambo React SDK (`@tambo-ai/react`)
+- Package manager: Bun (`bun.lock`, `packageManager` in `package.json`)
 
 ## Local dev
 
@@ -27,6 +28,8 @@ To enable the in-app "Tambo Console", set:
 ```bash
 NEXT_PUBLIC_TAMBO_API_KEY=...your_key...
 ```
+
+This is read in `src/config/env.ts` and passed into `TamboProvider` (client-side). Treat it as a public key.
 
 If the key is not set, the home page still renders the demo modules, but the Tambo chat UI is hidden.
 
