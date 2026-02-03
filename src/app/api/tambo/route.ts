@@ -8,24 +8,27 @@ import { mastra } from '@/mastra';
 
 export const runtime = 'nodejs';
 
-const uiMessageSchema = z.custom<UIMessage>((value) => {
-  if (!value || typeof value !== 'object') return false;
+const uiMessagePartsSchema = z
+  .array(z.any())
+  .refine(
+    (parts) =>
+      parts.every((part) => typeof part === 'object' && part !== null && 'type' in part && typeof part.type === 'string'),
+    { message: 'Invalid message parts.' }
+  );
 
-  const msg = value as UIMessage;
-  if (typeof msg.id !== 'string') return false;
-  if (msg.role !== 'system' && msg.role !== 'user' && msg.role !== 'assistant') return false;
-  if (!Array.isArray(msg.parts)) return false;
-  if (!msg.parts.every((part) => typeof part === 'object' && part !== null && 'type' in part && typeof part.type === 'string')) {
-    return false;
-  }
-
-  return true;
-});
+const uiMessageSchema = z
+  .object({
+    id: z.string(),
+    role: z.enum(['system', 'user', 'assistant']),
+    parts: uiMessagePartsSchema,
+    metadata: z.unknown().optional(),
+  })
+  .passthrough() satisfies z.ZodType<UIMessage>;
 
 const chatParamsSchema: z.ZodType<ChatStreamHandlerParams<UIMessage>> = z
   .object({
     messages: z.array(uiMessageSchema),
-    resumeData: z.record(z.any()).optional(),
+    resumeData: z.record(z.unknown()).optional(),
     trigger: z.enum(['submit-message', 'regenerate-message']).optional(),
   })
   .passthrough();
