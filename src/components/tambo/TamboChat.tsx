@@ -49,12 +49,21 @@ function getTextParts(content: unknown) {
     return textSegments.length ? textSegments.join("\n") : null;
   }
 
-  try {
-    const json = JSON.stringify(content, null, 2);
-    return json.length > 1000 ? json.slice(0, 1000) + "\n…(truncated)" : json;
-  } catch {
-    return null;
+  if (
+    content !== null &&
+    typeof content === "object" &&
+    !Array.isArray(content) &&
+    Object.keys(content).length <= 10
+  ) {
+    try {
+      const json = JSON.stringify(content, null, 2);
+      return json.length > 1000 ? json.slice(0, 1000) + "\n…(truncated)" : json;
+    } catch {
+      return null;
+    }
   }
+
+  return null;
 }
 
 export function TamboChat() {

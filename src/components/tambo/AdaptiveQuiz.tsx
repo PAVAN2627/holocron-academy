@@ -45,7 +45,8 @@ export function AdaptiveQuiz({
   passThreshold = 60,
   onScore,
 }: AdaptiveQuizProps) {
-  const effectiveThreshold = Math.min(100, Math.max(0, passThreshold));
+  const rawThreshold = Number.isFinite(passThreshold) ? passThreshold : 60;
+  const effectiveThreshold = Math.min(100, Math.max(0, rawThreshold));
   const schema = useMemo(() => buildQuizSchema(questions), [questions]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [result, setResult] = useState<
