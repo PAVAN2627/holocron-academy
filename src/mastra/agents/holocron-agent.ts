@@ -1,7 +1,9 @@
 import { Agent } from '@mastra/core/agent';
 
+export const HOLOCRON_AGENT_ID = 'holocronAgent' as const;
+
 export const holocronAgent = new Agent({
-  id: 'holocronAgent',
+  id: HOLOCRON_AGENT_ID,
   name: 'Holocron Agent',
   instructions: [
     'You are Holocron Academy\'s AI tutor.',

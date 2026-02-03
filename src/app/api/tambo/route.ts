@@ -5,31 +5,39 @@ import type { UIMessage } from 'ai';
 import { z } from 'zod';
 
 import { mastra } from '@/mastra';
+import { HOLOCRON_AGENT_ID } from '@/mastra/agents/holocron-agent';
 
 export const runtime = 'nodejs';
 
-const uiMessagePartSchema = z
-  .object({
-    type: z.string(),
-  })
-  .passthrough();
+const [nodeMajor, nodeMinor] = process.versions.node.split('.').map((part) => Number.parseInt(part, 10));
+if (nodeMajor < 22 || (nodeMajor === 22 && nodeMinor < 13)) {
+  throw new Error('Mastra /api/tambo route requires Node.js >= 22.13.0.');
+}
+
+const jsonValueSchema: z.ZodType<unknown> = z.lazy(() =>
+  z.union([z.string(), z.number(), z.boolean(), z.null(), z.array(jsonValueSchema), z.record(jsonValueSchema)])
+);
+
+const uiMessagePartsSchema = z.array(z.any()).refine(
+  (parts) => parts.every((part) => typeof part === 'object' && part !== null && 'type' in part && typeof part.type === 'string'),
+  { message: 'Invalid message parts.' }
+);
 
 const uiMessageSchema: z.ZodType<UIMessage> = z
   .object({
     id: z.string(),
     role: z.enum(['system', 'user', 'assistant']),
-    parts: z.array(uiMessagePartSchema),
+    parts: uiMessagePartsSchema,
     metadata: z.unknown().optional(),
   })
-  .passthrough() as unknown as z.ZodType<UIMessage>;
+  .passthrough();
 
 const chatParamsSchema: z.ZodType<ChatStreamHandlerParams<UIMessage>> = z
   .object({
     messages: z.array(uiMessageSchema),
-    resumeData: z.record(z.unknown()).optional(),
+    resumeData: z.record(jsonValueSchema).optional(),
     trigger: z.enum(['submit-message', 'regenerate-message']).optional(),
-  })
-  .passthrough();
+  });
 
 export async function POST(req: Request) {
   if (!process.env.OPENAI_API_KEY) {
@@ -48,11 +56,16 @@ export async function POST(req: Request) {
     return new Response('Invalid request body.', { status: 400 });
   }
 
-  const chatParams = parsed.data;
+  const { messages, resumeData, trigger } = parsed.data;
+  const chatParams: ChatStreamHandlerParams<UIMessage> = {
+    messages,
+    ...(resumeData ? { resumeData } : {}),
+    ...(trigger ? { trigger } : {}),
+  };
 
   const stream = await handleChatStream({
     mastra,
-    agentId: 'holocronAgent',
+    agentId: HOLOCRON_AGENT_ID,
     params: chatParams,
   });
 
