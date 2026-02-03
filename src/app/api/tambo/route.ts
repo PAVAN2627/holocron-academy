@@ -28,6 +28,14 @@ export async function POST(req: Request) {
     return new Response('Expected `messages` to be an array.', { status: 400 });
   }
 
+  if (
+    !rawParams.messages.every(
+      (msg) => typeof msg === 'object' && msg !== null && 'role' in msg && typeof (msg as { role?: unknown }).role === 'string'
+    )
+  ) {
+    return new Response('Invalid `messages` items.', { status: 400 });
+  }
+
   const chatParams = rawParams as unknown as ChatStreamHandlerParams<UIMessage>;
 
   const stream = await handleChatStream({
