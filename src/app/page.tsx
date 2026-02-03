@@ -95,7 +95,7 @@ export default function Home() {
           {hasTamboKey ? (
             <TamboChat />
           ) : (
-            <Card>
+            <Card className="terminal-overlay border-sky-500/30">
               <CardHeader>
                 <CardTitle>Tambo setup</CardTitle>
                 <CardDescription>

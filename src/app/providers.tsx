@@ -3,7 +3,7 @@
 import { TamboProvider } from '@tambo-ai/react';
 import type { PropsWithChildren } from 'react';
 
-import { tamboComponents } from '@/tambo/components';
+import { tamboComponents } from '@/tambo/config';
 
 export function Providers({ apiKey, children }: PropsWithChildren<{ apiKey?: string }>) {
   if (!apiKey) return children;

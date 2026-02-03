@@ -38,13 +38,15 @@ Open `http://localhost:3000`.
 
 ## Tambo integration
 
-We register three components (with Zod prop schemas) in `src/tambo/components.ts`:
+We register three components (with Zod prop schemas) in `src/tambo/config.ts`:
 
 - `AdaptiveQuiz`: schema-driven question list + grading. If the user's score is below `passingScorePercent` (default 60%), the quiz renders a `LessonSlide` remediation.
 - `GalaxyModule`: progress tracker that renders milestones as planets.
 - `DroidCodeLab`: live code editor with syntax validation; errors are highlighted in **Sith Red**.
 
 The provider wiring lives in `src/app/providers.tsx`.
+
+For Agent-mode streaming, there is also a Mastra-powered route at `src/app/api/tambo/route.ts` (requires Node 22+ and `OPENAI_API_KEY`).
 
 ## Galactic Terminal theme
 
