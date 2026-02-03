@@ -21,7 +21,7 @@ export function TamboChat() {
   const canSend = generationStage === GenerationStage.IDLE && !isPending;
 
   return (
-    <Card>
+    <Card className="terminal-overlay border-sky-500/30">
       <CardHeader>
         <CardTitle>Holocron Terminal</CardTitle>
       </CardHeader>
