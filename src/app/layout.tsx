@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 
 import { AppProviders } from "@/app/providers";
+import { TAMBO_PUBLIC_API_KEY } from "@/config/env";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -25,14 +26,12 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const tamboApiKey = process.env.NEXT_PUBLIC_TAMBO_API_KEY ?? null;
-
   return (
     <html lang="en" className="dark">
       <body
         className={`${geistSans.variable} ${geistMono.variable} galactic-terminal min-h-screen antialiased`}
       >
-        <AppProviders tamboApiKey={tamboApiKey}>{children}</AppProviders>
+        <AppProviders tamboApiKey={TAMBO_PUBLIC_API_KEY}>{children}</AppProviders>
       </body>
     </html>
   );

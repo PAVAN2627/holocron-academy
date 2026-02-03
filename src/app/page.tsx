@@ -3,6 +3,7 @@ import { DroidCodeLab } from "@/components/tambo/DroidCodeLab";
 import { GalaxyModule } from "@/components/tambo/GalaxyModule";
 import { TamboChat } from "@/components/tambo/TamboChat";
 import { Badge } from "@/components/ui/badge";
+import { TAMBO_PUBLIC_API_KEY } from "@/config/env";
 
 const demoQuiz = [
   {
@@ -38,8 +39,7 @@ const demoMilestones = [
 ];
 
 export default function Home() {
-  const tamboApiKey = process.env.NEXT_PUBLIC_TAMBO_API_KEY;
-  const tamboEnabled = Boolean(tamboApiKey);
+  const tamboEnabled = Boolean(TAMBO_PUBLIC_API_KEY);
 
   return (
     <main className="mx-auto w-full max-w-5xl px-6 py-12">

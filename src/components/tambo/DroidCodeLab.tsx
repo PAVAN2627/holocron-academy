@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import * as acorn from "acorn";
 
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,10 @@ export function DroidCodeLab({
   initialCode = "const greeting = 'Hello, Padawan'\nconsole.log(greeting)",
 }: DroidCodeLabProps) {
   const [code, setCode] = useState(initialCode);
+
+  useEffect(() => {
+    setCode(initialCode);
+  }, [initialCode]);
   const errorMessage = useMemo(() => getSyntaxErrorMessage(code), [code]);
   const hasError = errorMessage !== null;
 
