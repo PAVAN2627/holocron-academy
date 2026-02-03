@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 
 import { LessonSlide } from "@/components/tambo/LessonSlide";
@@ -52,6 +52,12 @@ export function AdaptiveQuiz({
     | null
   >(null);
   const [validationError, setValidationError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setAnswers({});
+    setResult(null);
+    setValidationError(null);
+  }, [schema]);
 
   const totalCount = questions.length;
 

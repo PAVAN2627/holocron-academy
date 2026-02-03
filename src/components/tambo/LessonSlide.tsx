@@ -23,8 +23,8 @@ export function LessonSlide({ title, summary, highlights }: LessonSlideProps) {
       </CardHeader>
       <CardContent>
         <ul className="list-disc space-y-2 pl-5 text-sm text-emerald-100/80">
-          {highlights.map((h) => (
-            <li key={h}>{h}</li>
+          {highlights.map((h, i) => (
+            <li key={i}>{h}</li>
           ))}
         </ul>
       </CardContent>

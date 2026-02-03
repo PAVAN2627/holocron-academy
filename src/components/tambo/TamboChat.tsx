@@ -15,6 +15,16 @@ type ThreadMessage = {
   renderedComponent?: React.ReactNode;
 };
 
+function isThreadMessage(m: unknown): m is ThreadMessage {
+  return (
+    m !== null &&
+    typeof m === "object" &&
+    "id" in m &&
+    typeof (m as { id?: unknown }).id === "string" &&
+    "content" in m
+  );
+}
+
 function getTextParts(content: unknown) {
   if (typeof content === "string") return content;
 
@@ -41,10 +51,11 @@ export function TamboChat() {
   const { thread } = useTamboThread();
   const { value, setValue, submit, isPending } = useTamboThreadInput();
 
-  const messages = useMemo(
-    () => (thread?.messages ?? []) as unknown as ThreadMessage[],
-    [thread],
-  );
+  const messages = useMemo(() => {
+    const raw = thread?.messages;
+    if (!Array.isArray(raw)) return [];
+    return (raw as unknown[]).filter(isThreadMessage);
+  }, [thread]);
 
   return (
     <Card className="border-emerald-500/25 bg-card/60">
