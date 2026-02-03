@@ -8,22 +8,20 @@ import { mastra } from '@/mastra';
 
 export const runtime = 'nodejs';
 
-const uiMessagePartsSchema = z
-  .array(z.any())
-  .refine(
-    (parts) =>
-      parts.every((part) => typeof part === 'object' && part !== null && 'type' in part && typeof part.type === 'string'),
-    { message: 'Invalid message parts.' }
-  );
+const uiMessagePartSchema = z
+  .object({
+    type: z.string(),
+  })
+  .passthrough();
 
-const uiMessageSchema = z
+const uiMessageSchema: z.ZodType<UIMessage> = z
   .object({
     id: z.string(),
     role: z.enum(['system', 'user', 'assistant']),
-    parts: uiMessagePartsSchema,
+    parts: z.array(uiMessagePartSchema),
     metadata: z.unknown().optional(),
   })
-  .passthrough() satisfies z.ZodType<UIMessage>;
+  .passthrough() as unknown as z.ZodType<UIMessage>;
 
 const chatParamsSchema: z.ZodType<ChatStreamHandlerParams<UIMessage>> = z
   .object({
