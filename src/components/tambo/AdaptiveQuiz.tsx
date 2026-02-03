@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { z } from "zod/v4";
+import { z } from "zod";
 
 import { LessonSlide } from "@/components/tambo/LessonSlide";
 import { Button } from "@/components/ui/button";

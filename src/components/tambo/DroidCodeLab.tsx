@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import * as acorn from "acorn";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,8 +15,7 @@ export type DroidCodeLabProps = {
 
 function getSyntaxErrorMessage(code: string) {
   try {
-    // eslint-disable-next-line no-new-func
-    new Function(code);
+    acorn.parse(code, { ecmaVersion: "latest" });
     return null;
   } catch (err) {
     return err instanceof Error ? err.message : String(err);

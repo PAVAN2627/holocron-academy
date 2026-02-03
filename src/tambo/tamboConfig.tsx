@@ -1,5 +1,5 @@
 import type { TamboComponent } from "@tambo-ai/react";
-import { z } from "zod/v4";
+import { z } from "zod";
 
 import { AdaptiveQuiz } from "@/components/tambo/AdaptiveQuiz";
 import { DroidCodeLab } from "@/components/tambo/DroidCodeLab";

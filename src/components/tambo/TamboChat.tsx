@@ -6,6 +6,7 @@ import { useTamboThread, useTamboThreadInput } from "@tambo-ai/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 type ThreadMessage = {
   id: string;
@@ -17,21 +18,20 @@ type ThreadMessage = {
 function getTextParts(content: unknown) {
   if (typeof content === "string") return content;
 
-  if (
-    Array.isArray(content) &&
-    content.every(
-      (p) =>
-        p !== null &&
-        typeof p === "object" &&
-        "type" in p &&
-        (p as { type: unknown }).type === "text" &&
-        "text" in p,
-    )
-  ) {
-    return content
-      .map((p) => (p as { text: unknown }).text)
-      .filter((t): t is string => typeof t === "string")
-      .join("\n");
+  if (Array.isArray(content)) {
+    const textSegments = content
+      .filter(
+        (p): p is { type?: unknown; text?: unknown } =>
+          p !== null &&
+          typeof p === "object" &&
+          "type" in p &&
+          (p as { type?: unknown }).type === "text" &&
+          "text" in p,
+      )
+      .map((p) => p.text)
+      .filter((t): t is string => typeof t === "string" && t.trim().length > 0);
+
+    return textSegments.length ? textSegments.join("\n") : null;
   }
 
   return null;
@@ -63,9 +63,16 @@ export function TamboChat() {
           ) : null}
           {messages.map((m) => {
             const text = getTextParts(m.content);
+            const isUser = m.role === "user";
 
             return (
-              <div key={m.id} className="space-y-2">
+              <div
+                key={m.id}
+                className={cn(
+                  "space-y-2",
+                  isUser ? "text-right" : "text-left",
+                )}
+              >
                 {text ? (
                   <p className="whitespace-pre-wrap text-sm text-emerald-100/90">
                     {text}
