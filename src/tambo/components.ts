@@ -1,1 +1,0 @@
-export { tamboComponents } from './config';

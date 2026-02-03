@@ -46,7 +46,7 @@ We register three components (with Zod prop schemas) in `src/tambo/config.ts`:
 
 The provider wiring lives in `src/app/providers.tsx`.
 
-For Agent-mode streaming, there is also a Mastra-powered route at `src/app/api/tambo/route.ts`.
+For Agent-mode streaming, there is also a Mastra-powered route at `src/app/api/tambo/route.ts` (requires Node 22+ and `OPENAI_API_KEY`).
 
 ## Galactic Terminal theme
 
