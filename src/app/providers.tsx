@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { TamboProvider } from "@tambo-ai/react";
 
 import { tamboComponents } from "@/tambo/tamboConfig";
@@ -8,7 +9,7 @@ export function AppProviders({
   children,
   tamboApiKey,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   tamboApiKey: string | null;
 }) {
   if (!tamboApiKey) return children;

@@ -27,8 +27,9 @@ function buildQuizSchema(questions: QuizQuestion[]) {
   const shape: Record<string, z.ZodTypeAny> = {};
 
   for (const question of questions) {
-    if (question.options.length > 0) {
-      shape[question.id] = z.enum(question.options as [string, ...string[]]);
+    if (question.options.length >= 1) {
+      const [first, ...rest] = question.options;
+      shape[question.id] = z.enum([first, ...rest] as [string, ...string[]]);
     } else {
       shape[question.id] = z.string().min(1);
     }
