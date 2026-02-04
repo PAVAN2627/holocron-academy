@@ -6,7 +6,7 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hasSession = Boolean(request.cookies.get(HOLOCRON_SESSION_COOKIE)?.value);
 
-  if ((pathname === '/login' || pathname === '/register') && hasSession) {
+  if ((pathname === '/login' || pathname === '/signup' || pathname === '/register') && hasSession) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
@@ -20,5 +20,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/login', '/register'],
+  matcher: ['/dashboard/:path*', '/login', '/signup', '/register'],
 };

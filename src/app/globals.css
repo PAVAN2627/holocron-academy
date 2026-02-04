@@ -30,9 +30,9 @@
       ),
       linear-gradient(
         90deg,
-        rgba(56, 189, 248, 0.06),
+        rgba(0, 242, 255, 0.06),
         rgba(168, 85, 247, 0.04),
-        rgba(56, 189, 248, 0.06)
+        rgba(0, 242, 255, 0.06)
       );
     opacity: 0.14;
     mix-blend-mode: multiply;
@@ -48,9 +48,9 @@
       radial-gradient(ellipse at center, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.6)),
       linear-gradient(
         120deg,
-        rgba(56, 189, 248, 0.16),
+        rgba(0, 242, 255, 0.16),
         rgba(168, 85, 247, 0.08),
-        rgba(56, 189, 248, 0.16)
+        rgba(0, 242, 255, 0.16)
       );
     opacity: 0.16;
     mix-blend-mode: screen;
@@ -88,27 +88,27 @@
     --radius: 0.5rem;
   }
   .dark {
-    --background: 152 80% 4%;
-    --foreground: 142 72% 84%;
-    --card: 152 70% 6%;
-    --card-foreground: 142 72% 88%;
-    --popover: 152 70% 6%;
-    --popover-foreground: 142 72% 88%;
-    --primary: 142 72% 84%;
-    --primary-foreground: 152 80% 6%;
-    --secondary: 152 45% 10%;
-    --secondary-foreground: 142 72% 88%;
-    --muted: 152 45% 10%;
-    --muted-foreground: 142 30% 70%;
-    --accent: 152 45% 12%;
-    --accent-foreground: 142 72% 90%;
-    --destructive: 0 85% 55%;
+    --background: 211 51% 9%;
+    --foreground: 210 20% 96%;
+    --card: 211 42% 12%;
+    --card-foreground: 210 20% 96%;
+    --popover: 211 42% 12%;
+    --popover-foreground: 210 20% 96%;
+    --primary: 183 100% 50%;
+    --primary-foreground: 211 51% 9%;
+    --secondary: 211 30% 16%;
+    --secondary-foreground: 210 20% 96%;
+    --muted: 211 26% 16%;
+    --muted-foreground: 210 12% 72%;
+    --accent: 211 30% 18%;
+    --accent-foreground: 210 20% 96%;
+    --destructive: 0 100% 50%;
     --destructive-foreground: 0 0% 98%;
-    --border: 152 35% 18%;
-    --input: 152 35% 18%;
-    --ring: 142 72% 66%;
-    --chart-1: 142 72% 60%;
-    --chart-2: 152 45% 45%;
+    --border: 211 24% 22%;
+    --input: 211 24% 22%;
+    --ring: 183 100% 50%;
+    --chart-1: 183 100% 50%;
+    --chart-2: 203 95% 58%;
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;

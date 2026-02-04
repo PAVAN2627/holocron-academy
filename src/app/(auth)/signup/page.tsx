@@ -1,19 +1,19 @@
 import Link from 'next/link';
-import { KeyRound } from 'lucide-react';
+import { UserPlus } from 'lucide-react';
 
-import { loginAction } from '@/app/actions/auth';
+import { signupAction } from '@/app/actions/auth';
 import { Reveal } from '@/components/motion/Reveal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 
-type LoginPageProps = {
+type SignupPageProps = {
   searchParams?: {
     next?: string;
   };
 };
 
-export default function LoginPage({ searchParams }: LoginPageProps) {
+export default function SignupPage({ searchParams }: SignupPageProps) {
   const nextPath = typeof searchParams?.next === 'string' ? searchParams.next : '/dashboard';
 
   return (
@@ -21,40 +21,53 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
       <Card terminal className="border-primary/20 bg-white/5 backdrop-blur-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-foreground">
-            <KeyRound className="h-5 w-5 text-primary" />
-            Log in
+            <UserPlus className="h-5 w-5 text-primary" />
+            Sign up
           </CardTitle>
-          <CardDescription>Use any name/password for the hackathon demo.</CardDescription>
+          <CardDescription>Create your profile to access the dashboard.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={loginAction} className="space-y-5">
+          <form action={signupAction} className="space-y-5">
             <input type="hidden" name="next" value={nextPath} />
 
             <div className="space-y-2">
               <label htmlFor="fullName" className="text-sm font-medium leading-none">
                 Full Name
               </label>
-              <Input id="fullName" name="fullName" placeholder="e.g. Leia Organa" autoComplete="name" required />
+              <Input id="fullName" name="fullName" placeholder="e.g. Luke Skywalker" autoComplete="name" required />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="classYear" className="text-sm font-medium leading-none">
+                Class/Year
+              </label>
+              <Input
+                id="classYear"
+                name="classYear"
+                placeholder="e.g. Year 2 (IT)"
+                autoComplete="organization-title"
+                required
+              />
             </div>
 
             <div className="space-y-2">
               <label htmlFor="password" className="text-sm font-medium leading-none">
                 Password
               </label>
-              <Input id="password" name="password" type="password" autoComplete="current-password" required />
+              <Input id="password" name="password" type="password" autoComplete="new-password" required />
             </div>
 
             <Button type="submit" className="w-full">
-              Log in
+              Create account
             </Button>
 
             <p className="text-sm text-muted-foreground">
-              New here?{' '}
+              Already have an account?{' '}
               <Link
-                href={`/signup?next=${encodeURIComponent(nextPath)}`}
+                href={`/login?next=${encodeURIComponent(nextPath)}`}
                 className="text-primary underline-offset-4 hover:underline"
               >
-                Create an account
+                Log in
               </Link>
             </p>
           </form>
