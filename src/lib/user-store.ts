@@ -7,11 +7,13 @@ import path from 'path';
 export type StoredUser = {
   fullName: string;
   fullNameNormalized: string;
+  email: string;
+  emailNormalized: string;
   passwordHash: string;
   classYear?: string;
 };
 
-export type UserStoreErrorCode = 'user_exists' | 'invalid_name' | 'invalid_password';
+export type UserStoreErrorCode = 'user_exists' | 'invalid_name' | 'invalid_email' | 'invalid_password';
 
 export class UserStoreError extends Error {
   readonly code: UserStoreErrorCode;
@@ -32,28 +34,10 @@ const PASSWORD_SALT_BYTES = 16;
 const PASSWORD_HASH_BYTES = 64;
 const PASSWORD_MIN_LENGTH = 8;
 const FULL_NAME_MAX_CHARS = 80;
+const EMAIL_MAX_CHARS = 200;
 const CLASS_YEAR_MAX_CHARS = 80;
 
-// NOTE: This file-based store is intended for hackathon demos only.
-// It is best-effort for low-traffic, single-process usage and is NOT safe for:
-// - concurrent signups across multiple Node processes/instances (e.g. serverless)
-// - durable, production-grade authentication storage
-const SEED_USERS_FILE_PATH = path.join(process.cwd(), 'src', 'data', 'users.json');
-const LOCAL_USERS_FILE_PATH = path.join(process.cwd(), 'src', 'data', 'users.local.json');
-
-const DEMO_MODE_ENABLED = process.env.HOLOCRON_DEMO_MODE === 'true';
-
-if (process.env.NODE_ENV === 'production' && !DEMO_MODE_ENABLED) {
-  console.warn(
-    '[user-store] File-based auth storage is enabled in production without HOLOCRON_DEMO_MODE=true. This is intended for demos only.'
-  );
-}
-
-function ensureDemoStoreEnabled() {
-  if (process.env.NODE_ENV === 'production' && !DEMO_MODE_ENABLED) {
-    throw new Error('File-based user store is disabled in production unless HOLOCRON_DEMO_MODE=true.');
-  }
-}
+const DB_FILE_PATH = path.join(process.cwd(), 'src', 'lib', 'db.json');
 
 function canonicalizeFullName(value: string): { fullName: string; normalized: string } {
   const fullName = value.trim().slice(0, FULL_NAME_MAX_CHARS);
@@ -61,6 +45,30 @@ function canonicalizeFullName(value: string): { fullName: string; normalized: st
     fullName,
     normalized: fullName.toLowerCase(),
   };
+}
+
+function canonicalizeEmail(value: string): { email: string; normalized: string } {
+  const email = value.trim().slice(0, EMAIL_MAX_CHARS);
+  return {
+    email,
+    normalized: email.toLowerCase(),
+  };
+}
+
+export function isValidEmail(value: string): boolean {
+  // Intentionally lightweight validation for hackathon use.
+  // We just need a stable identifier and basic typo prevention.
+  const normalized = value.trim().toLowerCase();
+  if (normalized.length < 3) return false;
+  if (normalized.includes(' ')) return false;
+  const atIndex = normalized.indexOf('@');
+  if (atIndex <= 0 || atIndex === normalized.length - 1) return false;
+
+  const domain = normalized.slice(atIndex + 1);
+  const domainParts = domain.split('.');
+  if (domainParts.length < 2) return false;
+  if (domainParts.some((part) => part.length === 0)) return false;
+  return true;
 }
 
 function parsePasswordHash(value: string): PasswordHashParts | null {
@@ -90,90 +98,85 @@ export function verifyPassword(password: string, storedHash: string): boolean {
   return timingSafeEqual(derived, parsed.hash);
 }
 
-function readUsersFile(filePath: string, { required }: { required: boolean }): StoredUser[] {
+type AuthDatabase = {
+  users: StoredUser[];
+};
+
+function parseDatabase(value: unknown): AuthDatabase {
+  if (!value || typeof value !== 'object') {
+    throw new Error('Invalid db.json format. Expected an object.');
+  }
+
+  const users = (value as { users?: unknown }).users;
+  if (!Array.isArray(users)) {
+    throw new Error('Invalid db.json format. Expected users to be an array.');
+  }
+
+  return {
+    users: users
+      .map((entry): StoredUser | null => {
+        if (!entry || typeof entry !== 'object') return null;
+        const record = entry as Partial<StoredUser>;
+        if (typeof record.fullName !== 'string') return null;
+        if (typeof record.fullNameNormalized !== 'string') return null;
+        if (typeof record.email !== 'string') return null;
+        if (typeof record.emailNormalized !== 'string') return null;
+        if (typeof record.passwordHash !== 'string') return null;
+        if (!parsePasswordHash(record.passwordHash)) {
+          console.warn('Skipping user with invalid passwordHash in db.json.', {
+            fullName: record.fullName,
+            email: record.email,
+          });
+          return null;
+        }
+
+        const classYear = typeof record.classYear === 'string' ? record.classYear : undefined;
+        return {
+          fullName: record.fullName,
+          fullNameNormalized: record.fullNameNormalized,
+          email: record.email,
+          emailNormalized: record.emailNormalized,
+          passwordHash: record.passwordHash,
+          ...(classYear ? { classYear } : {}),
+        };
+      })
+      .filter((user): user is StoredUser => Boolean(user)),
+  };
+}
+
+function readDatabase(): AuthDatabase {
   let raw: string;
   try {
-    raw = fs.readFileSync(filePath, 'utf-8');
+    raw = fs.readFileSync(DB_FILE_PATH, 'utf-8');
   } catch (err) {
     const code = typeof (err as { code?: unknown }).code === 'string' ? (err as { code: string }).code : null;
-    if (!required && code === 'ENOENT') {
-      return [];
+    if (code === 'ENOENT') {
+      return { users: [] };
     }
     throw err;
   }
 
-  let data: unknown;
+  let parsed: unknown;
   try {
-    data = JSON.parse(raw) as unknown;
-  } catch (err) {
-    if (!required) {
-      console.warn(`Failed to parse ${path.basename(filePath)}. Ignoring file.`, err);
-      return [];
-    }
-    throw err;
-  }
-  if (!Array.isArray(data)) {
-    throw new Error(`Invalid ${path.basename(filePath)} format. Expected an array.`);
+    parsed = JSON.parse(raw) as unknown;
+  } catch {
+    throw new Error('Invalid db.json format. Expected valid JSON.');
   }
 
-  return data
-    .map((entry): StoredUser | null => {
-      if (!entry || typeof entry !== 'object') return null;
-      const record = entry as Partial<StoredUser>;
-      if (typeof record.fullName !== 'string') return null;
-      if (typeof record.fullNameNormalized !== 'string') return null;
-      if (typeof record.passwordHash !== 'string') return null;
-      if (!parsePasswordHash(record.passwordHash)) {
-        console.warn(`Skipping user with invalid passwordHash in ${path.basename(filePath)}.`, {
-          fullName: record.fullName,
-        });
-        return null;
-      }
-
-      const classYear = typeof record.classYear === 'string' ? record.classYear : undefined;
-      return {
-        fullName: record.fullName,
-        fullNameNormalized: record.fullNameNormalized,
-        passwordHash: record.passwordHash,
-        ...(classYear ? { classYear } : {}),
-      };
-    })
-    .filter((user): user is StoredUser => Boolean(user));
+  return parseDatabase(parsed);
 }
 
-function readSeedUsers(): StoredUser[] {
-  return readUsersFile(SEED_USERS_FILE_PATH, { required: true });
-}
-
-function readLocalUsers(): StoredUser[] {
-  return readUsersFile(LOCAL_USERS_FILE_PATH, { required: false });
+function writeDatabase(database: AuthDatabase): void {
+  const payload = `${JSON.stringify(database, null, 2)}\n`;
+  fs.writeFileSync(DB_FILE_PATH, payload, { mode: 0o600 });
 }
 
 export function readUsers(): StoredUser[] {
-  ensureDemoStoreEnabled();
-  const users = new Map<string, StoredUser>();
-
-  for (const user of readSeedUsers()) {
-    users.set(user.fullNameNormalized, user);
-  }
-
-  for (const user of readLocalUsers()) {
-    users.set(user.fullNameNormalized, user);
-  }
-
-  return Array.from(users.values());
+  return readDatabase().users;
 }
 
 export function writeUsers(users: StoredUser[]): void {
-  ensureDemoStoreEnabled();
-  try {
-    const payload = `${JSON.stringify(users, null, 2)}\n`;
-    fs.writeFileSync(LOCAL_USERS_FILE_PATH, payload, { mode: 0o600 });
-    fs.chmodSync(LOCAL_USERS_FILE_PATH, 0o600);
-  } catch (err) {
-    console.error('Failed to persist local users file.', err);
-    throw err;
-  }
+  writeDatabase({ users });
 }
 
 // NOTE: `createUser` uses sync file I/O, but keeps an async API so it can be
@@ -191,33 +194,37 @@ function withCreateUserLock<T>(fn: () => T): Promise<T> {
   return next;
 }
 
-export function findUser(fullName: string): StoredUser | null {
-  const normalized = canonicalizeFullName(fullName).normalized;
+export function findUserByEmail(email: string): StoredUser | null {
+  const normalized = canonicalizeEmail(email).normalized;
   if (!normalized) return null;
 
   const users = readUsers();
-  return users.find((user) => user.fullNameNormalized === normalized) ?? null;
+  return users.find((user) => user.emailNormalized === normalized) ?? null;
 }
 
-export async function createUser(fullName: string, password: string, classYear?: string): Promise<StoredUser> {
-  ensureDemoStoreEnabled();
-
+export async function createUser(
+  fullName: string,
+  email: string,
+  password: string,
+  classYear?: string
+): Promise<StoredUser> {
   return withCreateUserLock(() => {
     const { fullName: trimmedFullName, normalized } = canonicalizeFullName(fullName);
     if (!normalized) {
       throw new UserStoreError('invalid_name', 'Full name is required.');
     }
 
+    const { email: trimmedEmail, normalized: emailNormalized } = canonicalizeEmail(email);
+    if (!isValidEmail(trimmedEmail)) {
+      throw new UserStoreError('invalid_email', 'Email is invalid.');
+    }
+
     if (password.trim().length < PASSWORD_MIN_LENGTH) {
       throw new UserStoreError('invalid_password', `Password must be at least ${PASSWORD_MIN_LENGTH} characters.`);
     }
 
-    const seedUsers = readSeedUsers();
-    const localUsers = readLocalUsers();
-    if (
-      seedUsers.some((user) => user.fullNameNormalized === normalized) ||
-      localUsers.some((user) => user.fullNameNormalized === normalized)
-    ) {
+    const database = readDatabase();
+    if (database.users.some((user) => user.emailNormalized === emailNormalized)) {
       throw new UserStoreError('user_exists', 'User already exists.');
     }
 
@@ -226,11 +233,15 @@ export async function createUser(fullName: string, password: string, classYear?:
     const user: StoredUser = {
       fullName: trimmedFullName,
       fullNameNormalized: normalized,
+      email: trimmedEmail,
+      emailNormalized,
       passwordHash: hashPassword(password),
       ...(trimmedClassYear ? { classYear: trimmedClassYear } : {}),
     };
 
-    writeUsers([...localUsers, user]);
+    writeDatabase({
+      users: [...database.users, user],
+    });
     return user;
   });
 }

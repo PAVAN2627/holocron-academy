@@ -5,6 +5,7 @@ export const HOLOCRON_PROFILE_COOKIE = 'holocron_profile';
 // Do not use this cookie for authorization, access control, or grading.
 export type HolocronProfile = {
   fullName: string;
+  email: string;
   classYear?: string;
 };
 
@@ -12,6 +13,7 @@ export function encodeHolocronProfile(profile: HolocronProfile): string {
   // The encoded shape is persisted in user cookies; if it changes, update `parseHolocronProfile` accordingly.
   return JSON.stringify({
     fullName: profile.fullName.trim().slice(0, 80),
+    email: profile.email.trim().slice(0, 200),
     classYear: profile.classYear?.trim().slice(0, 32) || undefined,
   });
 }
@@ -24,13 +26,16 @@ export function parseHolocronProfile(value: unknown): HolocronProfile | null {
     if (!parsed || typeof parsed !== 'object') return null;
 
     const fullName = (parsed as { fullName?: unknown }).fullName;
+    const email = (parsed as { email?: unknown }).email;
     const classYear = (parsed as { classYear?: unknown }).classYear;
 
     if (typeof fullName !== 'string' || fullName.trim().length === 0) return null;
+    if (typeof email !== 'string' || email.trim().length === 0) return null;
     if (classYear != null && typeof classYear !== 'string') return null;
 
     return {
       fullName,
+      email,
       classYear: typeof classYear === 'string' && classYear.trim().length > 0 ? classYear : undefined,
     };
   } catch {
