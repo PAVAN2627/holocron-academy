@@ -121,12 +121,12 @@ type AuthDatabase = {
 
 function parseDatabase(value: unknown): AuthDatabase {
   if (!value || typeof value !== 'object') {
-    throw new Error('Invalid db.json format. Expected an object.');
+    throw new Error('Invalid auth database format. Expected an object.');
   }
 
   const users = (value as { users?: unknown }).users;
   if (!Array.isArray(users)) {
-    throw new Error('Invalid db.json format. Expected users to be an array.');
+    throw new Error('Invalid auth database format. Expected users to be an array.');
   }
 
   return {
@@ -177,14 +177,14 @@ function readDatabase(): AuthDatabase {
   try {
     parsed = JSON.parse(raw) as unknown;
   } catch (err) {
-    console.error('Invalid db.json JSON. Resetting database to empty.', err);
+    console.error(`[auth] Invalid JSON in auth database at ${DB_FILE_PATH}. Resetting database to empty.`, err);
     return { users: [] };
   }
 
   try {
     return parseDatabase(parsed);
   } catch (err) {
-    console.error('Invalid db.json shape. Resetting database to empty.', err);
+    console.error(`[auth] Invalid shape in auth database at ${DB_FILE_PATH}. Resetting database to empty.`, err);
     return { users: [] };
   }
 }
@@ -202,14 +202,25 @@ function writeDatabase(database: AuthDatabase): void {
     } catch (err) {
       const code = typeof (err as { code?: unknown }).code === 'string' ? (err as { code: string }).code : null;
       if (code === 'EEXIST' || code === 'EPERM') {
-        fs.rmSync(DB_FILE_PATH, { force: true });
+        try {
+          fs.rmSync(DB_FILE_PATH, { force: true });
+        } catch (removeErr) {
+          console.warn(`[auth] Failed to remove existing auth database at ${DB_FILE_PATH}.`, removeErr);
+        }
         fs.renameSync(tmpPath, DB_FILE_PATH);
         return;
       }
       throw err;
     }
+  } catch (err) {
+    console.error(`[auth] Failed to write auth database at ${DB_FILE_PATH}.`, err);
+    throw err;
   } finally {
-    fs.rmSync(tmpPath, { force: true });
+    try {
+      fs.rmSync(tmpPath, { force: true });
+    } catch (cleanupErr) {
+      console.warn(`[auth] Failed to clean up temp auth database file at ${tmpPath}.`, cleanupErr);
+    }
   }
 }
 
