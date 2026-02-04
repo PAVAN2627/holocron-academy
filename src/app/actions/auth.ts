@@ -32,9 +32,17 @@ function setHolocronSession(faction: HolocronFaction) {
   store.set(HOLOCRON_FACTION_COOKIE, faction, cookieOptions);
 }
 
+function isNonEmptyString(value: FormDataEntryValue | null): value is string {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
 export async function loginAction(formData: FormData) {
   const faction = coerceHolocronFaction(formData.get('faction'));
   const nextPath = sanitizeNextPath(formData.get('next'));
+
+  if (!isNonEmptyString(formData.get('callsign')) || !isNonEmptyString(formData.get('passcode'))) {
+    redirect('/login');
+  }
 
   setHolocronSession(faction);
   redirect(nextPath);
@@ -43,6 +51,10 @@ export async function loginAction(formData: FormData) {
 export async function registerAction(formData: FormData) {
   const faction = coerceHolocronFaction(formData.get('faction'));
   const nextPath = sanitizeNextPath(formData.get('next'));
+
+  if (!isNonEmptyString(formData.get('callsign')) || !isNonEmptyString(formData.get('passcode'))) {
+    redirect('/register');
+  }
 
   setHolocronSession(faction);
   redirect(nextPath);

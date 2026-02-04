@@ -24,7 +24,7 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
               <KeyRound className="h-5 w-5" />
               Login
             </CardTitle>
-            <CardDescription>Imperial clearance or Rebel credentials required.</CardDescription>
+            <CardDescription>Hackathon demo auth — enter any callsign and pick a faction.</CardDescription>
           </div>
         </div>
       </CardHeader>

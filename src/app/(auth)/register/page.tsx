@@ -22,7 +22,7 @@ export default function RegisterPage({ searchParams }: RegisterPageProps) {
           <UserPlus className="h-5 w-5" />
           Register
         </CardTitle>
-        <CardDescription>Pick a faction and claim your callsign.</CardDescription>
+        <CardDescription>Hackathon demo registration — claim a callsign and pick a faction.</CardDescription>
       </CardHeader>
       <CardContent>
         <form action={registerAction} className="space-y-5">
