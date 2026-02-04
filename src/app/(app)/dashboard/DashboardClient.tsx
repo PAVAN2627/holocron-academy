@@ -1,12 +1,13 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { AdaptiveQuiz, type AdaptiveQuizCompletion } from '@/components/holocron/AdaptiveQuiz';
 import { GalaxyModule } from '@/components/holocron/GalaxyModule';
 import { Reveal } from '@/components/motion/Reveal';
 import { TamboChat } from '@/components/tambo/TamboChat';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
@@ -17,6 +18,69 @@ type QuizProgress = {
   totalPercent: number;
   lastPercent: number | null;
 };
+
+type QuizRank = 'Youngling' | 'Padawan' | 'Knight' | 'Master';
+
+const quizRanks: QuizRank[] = ['Youngling', 'Padawan', 'Knight', 'Master'];
+
+type GeneratedQuiz = {
+  title: string;
+  description?: string;
+  passingScorePercent: number;
+  questions: {
+    id: string;
+    prompt: string;
+    choices: string[];
+    correctIndex: number;
+    explanation?: string;
+    lessonSlide?: {
+      title: string;
+      content: string;
+    };
+  }[];
+};
+
+type QuizApiErrorPayload = {
+  error: {
+    code: string;
+    message: string;
+  };
+};
+
+function isQuizApiErrorPayload(value: unknown): value is QuizApiErrorPayload {
+  if (!value || typeof value !== 'object') return false;
+
+  const payload = value as QuizApiErrorPayload;
+  if (!payload.error || typeof payload.error !== 'object') return false;
+
+  return typeof payload.error.code === 'string' && typeof payload.error.message === 'string';
+}
+
+function isGeneratedQuiz(value: unknown): value is GeneratedQuiz {
+  if (!value || typeof value !== 'object') return false;
+
+  const quiz = value as Partial<GeneratedQuiz>;
+  if (typeof quiz.title !== 'string') return false;
+  if (typeof quiz.passingScorePercent !== 'number') return false;
+  if (!Array.isArray(quiz.questions) || quiz.questions.length === 0) return false;
+
+  return quiz.questions.every((question) => {
+    if (!question || typeof question !== 'object') return false;
+
+    const q = question as GeneratedQuiz['questions'][number];
+    return (
+      typeof q.id === 'string' &&
+      typeof q.prompt === 'string' &&
+      Array.isArray(q.choices) &&
+      q.choices.length >= 2 &&
+      q.choices.every((choice) => typeof choice === 'string') &&
+      typeof q.correctIndex === 'number' &&
+      Number.isInteger(q.correctIndex) &&
+      q.correctIndex >= 0 &&
+      q.correctIndex < q.choices.length
+    );
+  });
+}
 
 // In-memory demo state (not persisted across refreshes).
 
@@ -31,6 +95,13 @@ export function DashboardClient({ hasTamboKey }: DashboardClientProps) {
     totalPercent: 0,
     lastPercent: null,
   });
+
+  const [quizRank, setQuizRank] = useState<QuizRank>('Padawan');
+  const [quiz, setQuiz] = useState<GeneratedQuiz | null>(null);
+  const [quizError, setQuizError] = useState<string | null>(null);
+  const [quizErrorCode, setQuizErrorCode] = useState<string | null>(null);
+  const [quizLoading, setQuizLoading] = useState(false);
+  const quizRequestControllerRef = useRef<AbortController | null>(null);
 
   const averagePercent = useMemo(() => {
     if (quizProgress.attempts === 0) return null;
@@ -47,6 +118,69 @@ export function DashboardClient({ hasTamboKey }: DashboardClientProps) {
       };
     });
   };
+
+  const generateQuiz = async (rank: QuizRank) => {
+    quizRequestControllerRef.current?.abort();
+    const controller = new AbortController();
+    quizRequestControllerRef.current = controller;
+
+    setQuizLoading(true);
+    setQuizError(null);
+    setQuizErrorCode(null);
+
+    try {
+      const res = await fetch('/api/quiz', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ rank }),
+        signal: controller.signal,
+      });
+
+      if (!res.ok) {
+        const payload: unknown = await res.json().catch(() => null);
+        if (isQuizApiErrorPayload(payload)) {
+          const error = new Error(payload.error.message) as Error & { code?: string };
+          error.code = payload.error.code;
+          throw error;
+        }
+
+        throw new Error('Failed to generate quiz.');
+      }
+
+      const data: unknown = await res.json();
+
+      if (!isGeneratedQuiz(data)) {
+        throw new Error('Quiz generation returned an invalid format.');
+      }
+
+      setQuiz(data);
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        return;
+      }
+
+      console.error('Failed to generate quiz:', err);
+
+      const message = err instanceof Error ? err.message : 'Failed to generate quiz.';
+      setQuizError(message);
+      setQuizErrorCode(typeof (err as { code?: unknown }).code === 'string' ? (err as { code: string }).code : null);
+      setQuiz(null);
+    } finally {
+      if (quizRequestControllerRef.current === controller) {
+        setQuizLoading(false);
+        quizRequestControllerRef.current = null;
+      }
+    }
+  };
+
+  useEffect(() => {
+    void generateQuiz(quizRank);
+
+    return () => {
+      quizRequestControllerRef.current?.abort();
+      quizRequestControllerRef.current = null;
+    };
+  }, [quizRank]);
 
   return (
     <div className="space-y-8">
@@ -113,58 +247,98 @@ export function DashboardClient({ hasTamboKey }: DashboardClientProps) {
           </Reveal>
 
           <Reveal delay={0.05}>
-            <GalaxyModule
-              title="GalaxyModule"
-              planets={[
-                { name: 'Tatooine', description: 'Fundamentals' },
-                { name: 'Coruscant', description: 'UI patterns' },
-                { name: 'Dagobah', description: 'Adaptive practice' },
-                { name: 'Mustafar', description: 'Error handling' },
-              ]}
-              currentIndex={1}
-              subtitle="Milestones tracked as planets"
-            />
+            <div id="galaxy-map" className="scroll-mt-24">
+              <GalaxyModule
+                title="Galaxy Map"
+                planets={[
+                  { name: 'Tatooine', description: 'Fundamentals' },
+                  { name: 'Coruscant', description: 'UI patterns' },
+                  { name: 'Dagobah', description: 'Adaptive practice' },
+                  { name: 'Mustafar', description: 'Error handling' },
+                ]}
+                currentIndex={1}
+                subtitle="Milestones tracked as planets"
+              />
+            </div>
           </Reveal>
 
           <Reveal delay={0.1}>
-            <div id="quizzes" className="scroll-mt-24">
-              <AdaptiveQuiz
-                title="Jedi Trials"
-                passingScorePercent={60}
-                questions={[
-                  {
-                    id: 'q1',
-                    prompt: 'In Next.js 14, where does the App Router live by default?',
-                    choices: ['pages/', 'app/', 'src/app/', 'routes/'],
-                    correctIndex: 2,
-                    explanation: 'This repo uses create-next-app with the src directory enabled.',
-                    lessonSlide: {
-                      title: 'App Router refresher',
-                      content:
-                        'The App Router lives in src/app/. Each folder can define a route segment, and layout/page files compose your UI.',
-                    },
-                  },
-                  {
-                    id: 'q2',
-                    prompt: 'What should happen if the quiz score is below 60%?',
-                    choices: ['Show a remediation slide', 'Close the app', 'Hide the score', 'Restart the browser'],
-                    correctIndex: 0,
-                    explanation: 'Holocron Academy nudges the learner with extra context.',
-                  },
-                  {
-                    id: 'q3',
-                    prompt: 'What is Tambo used for in this project?',
-                    choices: ['Image optimization', 'Generative UI / component hydration', 'Database migrations', 'CSS minification'],
-                    correctIndex: 1,
-                    explanation: 'We register UI components so Tambo can respond with interactive experiences.',
-                  },
-                ]}
-                remediation={{
-                  title: 'Lesson: Passing the basics',
-                  content: 'Review the explanations above and try again. The Holocron adapts when you need extra context.',
-                }}
-                onCompleted={handleQuizCompleted}
-              />
+            <div id="trials" className="scroll-mt-24 space-y-4">
+              <Card terminal className="border-white/10 bg-white/5 backdrop-blur-xl">
+                <CardHeader>
+                  <CardTitle className="text-foreground">Trials</CardTitle>
+                  <CardDescription>Adaptive quizzes generated by AI based on your rank.</CardDescription>
+                </CardHeader>
+                <CardContent className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs font-medium text-muted-foreground">Rank</span>
+                    <select
+                      value={quizRank}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        if (quizRanks.includes(value as QuizRank)) {
+                          setQuizRank(value as QuizRank);
+                        }
+                      }}
+                      disabled={quizLoading}
+                      className="h-10 rounded-md border border-white/10 bg-white/5 px-3 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    >
+                      <option value="Youngling">Youngling</option>
+                      <option value="Padawan">Padawan</option>
+                      <option value="Knight">Knight</option>
+                      <option value="Master">Master</option>
+                    </select>
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="border-primary/25 bg-white/5 text-foreground hover:bg-white/10"
+                    disabled={quizLoading}
+                    onClick={() => {
+                      void generateQuiz(quizRank);
+                    }}
+                  >
+                    {quizLoading ? 'Generating…' : 'Regenerate quiz'}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {quizError ? (
+                <Card terminal className="border-destructive/40 bg-destructive/10">
+                  <CardHeader>
+                    <CardTitle className="text-destructive">Quiz generation failed</CardTitle>
+                    <CardDescription className="text-destructive/80">
+                      {quizError}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-destructive/80">Please try again in a moment.</p>
+                    {quizErrorCode === 'azure_misconfig' ? (
+                      <p className="mt-2 text-xs text-destructive/70">
+                        Technical hint: check AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_DEPLOYMENT, and AZURE_OPENAI_KEY.
+                      </p>
+                    ) : null}
+                  </CardContent>
+                </Card>
+              ) : null}
+
+              {quiz ? (
+                <AdaptiveQuiz
+                  title={quiz.title}
+                  description={quiz.description}
+                  passingScorePercent={quiz.passingScorePercent}
+                  questions={quiz.questions}
+                  onCompleted={handleQuizCompleted}
+                />
+              ) : (
+                <Card terminal className="border-white/10 bg-white/5 backdrop-blur-xl">
+                  <CardHeader>
+                    <CardTitle className="text-foreground">Generating quiz</CardTitle>
+                    <CardDescription>Waiting for the Holocron…</CardDescription>
+                  </CardHeader>
+                </Card>
+              )}
             </div>
           </Reveal>
         </section>

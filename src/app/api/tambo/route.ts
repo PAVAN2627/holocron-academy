@@ -1,7 +1,7 @@
 import { handleChatStream } from '@mastra/ai-sdk';
 import type { ChatStreamHandlerParams } from '@mastra/ai-sdk';
-import { createUIMessageStreamResponse } from 'ai';
-import type { UIMessage } from 'ai';
+import { createUIMessageStreamResponse, smoothStream } from 'ai';
+import type { TextStreamPart, ToolSet, UIMessage, UIMessageChunk } from 'ai';
 import { z } from 'zod';
 
 import { mastra } from '@/mastra';
@@ -78,7 +78,67 @@ export async function POST(req: Request) {
       params: chatParams,
     });
 
-    return createUIMessageStreamResponse({ stream });
+    const emptyTools = {} as const satisfies ToolSet;
+    const smoothTransform = smoothStream({ delayInMs: 8, chunking: 'word' })({ tools: emptyTools });
+
+    const smoothedStream: ReadableStream<UIMessageChunk> = stream
+      .pipeThrough(
+        new TransformStream<UIMessageChunk, TextStreamPart<typeof emptyTools>>({
+          transform(chunk, controller) {
+            if (chunk.type === 'text-delta') {
+              controller.enqueue({
+                type: 'text-delta',
+                id: chunk.id,
+                text: chunk.delta,
+                ...(chunk.providerMetadata ? { providerMetadata: chunk.providerMetadata } : {}),
+              });
+              return;
+            }
+
+            if (chunk.type === 'reasoning-delta') {
+              controller.enqueue({
+                type: 'reasoning-delta',
+                id: chunk.id,
+                text: chunk.delta,
+                ...(chunk.providerMetadata ? { providerMetadata: chunk.providerMetadata } : {}),
+              });
+              return;
+            }
+
+            controller.enqueue(chunk as unknown as TextStreamPart<typeof emptyTools>);
+          },
+        })
+      )
+      .pipeThrough(smoothTransform)
+      .pipeThrough(
+        new TransformStream<TextStreamPart<typeof emptyTools>, UIMessageChunk>({
+          transform(chunk, controller) {
+            if (chunk.type === 'text-delta') {
+              controller.enqueue({
+                type: 'text-delta',
+                id: chunk.id,
+                delta: chunk.text,
+                ...(chunk.providerMetadata ? { providerMetadata: chunk.providerMetadata } : {}),
+              });
+              return;
+            }
+
+            if (chunk.type === 'reasoning-delta') {
+              controller.enqueue({
+                type: 'reasoning-delta',
+                id: chunk.id,
+                delta: chunk.text,
+                ...(chunk.providerMetadata ? { providerMetadata: chunk.providerMetadata } : {}),
+              });
+              return;
+            }
+
+            controller.enqueue(chunk as unknown as UIMessageChunk);
+          },
+        })
+      );
+
+    return createUIMessageStreamResponse({ stream: smoothedStream });
   } catch (err) {
     console.error('Failed to start chat stream:', err);
     return new Response('Failed to start chat stream.', { status: 500 });
