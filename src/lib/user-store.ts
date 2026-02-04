@@ -8,6 +8,7 @@ export type StoredUser = {
   fullName: string;
   fullNameNormalized: string;
   passwordHash: string;
+  classYear?: string;
 };
 
 export type UserStoreErrorCode = 'user_exists' | 'invalid_name' | 'invalid_password';
@@ -110,10 +111,13 @@ function readUsersFile(filePath: string, { required }: { required: boolean }): S
         });
         return null;
       }
+
+      const classYear = typeof record.classYear === 'string' ? record.classYear : undefined;
       return {
         fullName: record.fullName,
         fullNameNormalized: record.fullNameNormalized,
         passwordHash: record.passwordHash,
+        ...(classYear ? { classYear } : {}),
       };
     })
     .filter((user): user is StoredUser => Boolean(user));
@@ -173,7 +177,7 @@ export function findUser(fullName: string): StoredUser | null {
   return users.find((user) => user.fullNameNormalized === normalized) ?? null;
 }
 
-export async function createUser(fullName: string, password: string): Promise<StoredUser> {
+export async function createUser(fullName: string, password: string, classYear?: string): Promise<StoredUser> {
   return withCreateUserLock(() => {
     const { fullName: trimmedFullName, normalized } = canonicalizeFullName(fullName);
     if (!normalized) {
@@ -197,6 +201,7 @@ export async function createUser(fullName: string, password: string): Promise<St
       fullName: trimmedFullName,
       fullNameNormalized: normalized,
       passwordHash: hashPassword(password),
+      ...(classYear ? { classYear } : {}),
     };
 
     writeUsers([...localUsers, user]);

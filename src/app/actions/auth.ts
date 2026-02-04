@@ -69,7 +69,10 @@ export async function loginAction(formData: FormData) {
       redirectWithError('/login', nextPath, 'invalid');
     }
 
-    setHolocronSession({ fullName: user.fullName });
+    setHolocronSession({
+      fullName: user.fullName,
+      ...(user.classYear ? { classYear: user.classYear } : {}),
+    });
     redirect(nextPath);
   } catch (err) {
     console.error('Login failed:', err);
@@ -89,7 +92,7 @@ export async function signupAction(formData: FormData) {
   }
 
   try {
-    const user = await createUser(fullName, password);
+    const user = await createUser(fullName, password, classYear);
     setHolocronSession({ fullName: user.fullName, classYear });
     redirect(nextPath);
   } catch (err) {
