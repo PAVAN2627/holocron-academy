@@ -34,7 +34,9 @@ const PASSWORD_MIN_LENGTH = 8;
 const FULL_NAME_MAX_CHARS = 80;
 
 // NOTE: This file-based store is intended for hackathon demos only.
-// It is not safe for concurrent or multi-instance deployments.
+// It is best-effort for low-traffic, single-process usage and is NOT safe for:
+// - concurrent signups across multiple Node processes/instances (e.g. serverless)
+// - durable, production-grade authentication storage
 const SEED_USERS_FILE_PATH = path.join(process.cwd(), 'src', 'data', 'users.json');
 const LOCAL_USERS_FILE_PATH = path.join(process.cwd(), 'src', 'data', 'users.local.json');
 

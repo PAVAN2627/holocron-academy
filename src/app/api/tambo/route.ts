@@ -179,8 +179,11 @@ export async function POST(req: Request) {
         agentId: HOLOCRON_AGENT_ID,
         params: {
           ...chatParams,
-          // Ensure the safe prompt takes precedence by removing prior system messages on retry.
-          messages: [createSafeSystemMessage(), ...chatParams.messages.filter((message) => message.role !== 'system')],
+          messages: [
+            createSafeSystemMessage(),
+            ...chatParams.messages.filter((message) => message.role === 'system'),
+            ...chatParams.messages.filter((message) => message.role !== 'system'),
+          ],
         },
       });
     }

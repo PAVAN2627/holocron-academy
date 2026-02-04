@@ -54,6 +54,8 @@ function isNonEmptyString(value: FormDataEntryValue | null): value is string {
 }
 
 export async function loginAction(formData: FormData) {
+  // NOTE: No rate limiting / brute-force protection is implemented here.
+  // For any non-demo deployment, enforce limits at the edge or use a real auth provider.
   const nextPath = sanitizeNextPath(formData.get('next'));
 
   const fullName = formData.get('fullName');
