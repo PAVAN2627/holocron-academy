@@ -1,6 +1,8 @@
 export const HOLOCRON_SESSION_COOKIE = 'holocron_session';
 export const HOLOCRON_PROFILE_COOKIE = 'holocron_profile';
 
+// Display-only profile information for the hackathon demo.
+// Do not use this cookie for authorization, access control, or grading.
 export type HolocronProfile = {
   fullName: string;
   classYear?: string;
