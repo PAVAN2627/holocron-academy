@@ -2,6 +2,7 @@ import 'server-only';
 
 import { randomBytes, scryptSync, timingSafeEqual } from 'crypto';
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 
 export type StoredUser = {
@@ -37,7 +38,23 @@ const FULL_NAME_MAX_CHARS = 80;
 const EMAIL_MAX_CHARS = 200;
 const CLASS_YEAR_MAX_CHARS = 80;
 
-const DB_FILE_PATH = path.join(process.cwd(), 'src', 'lib', 'db.json');
+function resolveDatabasePath(): string {
+  const raw = process.env.HOLOCRON_DB_PATH;
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    if (trimmed.length > 0) {
+      return path.isAbsolute(trimmed) ? trimmed : path.join(process.cwd(), trimmed);
+    }
+  }
+
+  if (process.env.VERCEL) {
+    return path.join(os.tmpdir(), 'holocron-db.json');
+  }
+
+  return path.join(process.cwd(), 'src', 'lib', 'db.json');
+}
+
+const DB_FILE_PATH = resolveDatabasePath();
 
 function canonicalizeFullName(value: string): { fullName: string; normalized: string } {
   const fullName = value.trim().slice(0, FULL_NAME_MAX_CHARS);
@@ -159,16 +176,41 @@ function readDatabase(): AuthDatabase {
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw) as unknown;
-  } catch {
-    throw new Error('Invalid db.json format. Expected valid JSON.');
+  } catch (err) {
+    console.error('Invalid db.json JSON. Resetting database to empty.', err);
+    return { users: [] };
   }
 
-  return parseDatabase(parsed);
+  try {
+    return parseDatabase(parsed);
+  } catch (err) {
+    console.error('Invalid db.json shape. Resetting database to empty.', err);
+    return { users: [] };
+  }
 }
 
 function writeDatabase(database: AuthDatabase): void {
   const payload = `${JSON.stringify(database, null, 2)}\n`;
-  fs.writeFileSync(DB_FILE_PATH, payload, { mode: 0o600 });
+  const directory = path.dirname(DB_FILE_PATH);
+  fs.mkdirSync(directory, { recursive: true });
+
+  const tmpPath = path.join(directory, `.holocron-db.${process.pid}.${randomBytes(6).toString('hex')}.tmp`);
+  try {
+    fs.writeFileSync(tmpPath, payload, { mode: 0o600 });
+    try {
+      fs.renameSync(tmpPath, DB_FILE_PATH);
+    } catch (err) {
+      const code = typeof (err as { code?: unknown }).code === 'string' ? (err as { code: string }).code : null;
+      if (code === 'EEXIST' || code === 'EPERM') {
+        fs.rmSync(DB_FILE_PATH, { force: true });
+        fs.renameSync(tmpPath, DB_FILE_PATH);
+        return;
+      }
+      throw err;
+    }
+  } finally {
+    fs.rmSync(tmpPath, { force: true });
+  }
 }
 
 export function readUsers(): StoredUser[] {
