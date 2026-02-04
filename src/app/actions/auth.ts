@@ -100,12 +100,18 @@ export async function signupAction(formData: FormData) {
   } catch (err) {
     if (err instanceof UserStoreError) {
       switch (err.code) {
-        case 'user_exists':
+        case 'user_exists': {
           redirectWithError('/signup', nextPath, 'exists');
-        case 'invalid_name':
+          break;
+        }
+        case 'invalid_name': {
           redirectWithError('/signup', nextPath, 'invalid_name');
-        case 'invalid_password':
+          break;
+        }
+        case 'invalid_password': {
           redirectWithError('/signup', nextPath, 'invalid_password');
+          break;
+        }
         default: {
           const _exhaustive: never = err.code;
           throw new Error(`Unhandled user store error code: ${_exhaustive}`);
