@@ -28,7 +28,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} galactic-terminal min-h-screen antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} min-h-screen antialiased`}
       >
         <Providers apiKey={process.env.NEXT_PUBLIC_TAMBO_API_KEY}>{children}</Providers>
       </body>

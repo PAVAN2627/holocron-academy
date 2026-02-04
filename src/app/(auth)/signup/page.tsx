@@ -10,11 +10,21 @@ import { Input } from '@/components/ui/input';
 type SignupPageProps = {
   searchParams?: {
     next?: string;
+    error?: string;
   };
 };
 
 export default function SignupPage({ searchParams }: SignupPageProps) {
   const nextPath = typeof searchParams?.next === 'string' ? searchParams.next : '/dashboard';
+  const error = typeof searchParams?.error === 'string' ? searchParams.error : null;
+  const errorMessage =
+    error === 'exists'
+      ? 'An account with that Full Name already exists. Try logging in instead.'
+      : error === 'server'
+        ? 'Signup is temporarily unavailable. Please try again.'
+        : error === 'invalid'
+          ? 'Please fill out all fields to create your account.'
+          : null;
 
   return (
     <Reveal className="w-full max-w-md">
@@ -29,6 +39,12 @@ export default function SignupPage({ searchParams }: SignupPageProps) {
         <CardContent>
           <form action={signupAction} className="space-y-5">
             <input type="hidden" name="next" value={nextPath} />
+
+            {errorMessage ? (
+              <p className="rounded-md border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-sm text-amber-100">
+                {errorMessage}
+              </p>
+            ) : null}
 
             <div className="space-y-2">
               <label htmlFor="fullName" className="text-sm font-medium leading-none">

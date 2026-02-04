@@ -10,11 +10,19 @@ import { Input } from '@/components/ui/input';
 type LoginPageProps = {
   searchParams?: {
     next?: string;
+    error?: string;
   };
 };
 
 export default function LoginPage({ searchParams }: LoginPageProps) {
   const nextPath = typeof searchParams?.next === 'string' ? searchParams.next : '/dashboard';
+  const error = typeof searchParams?.error === 'string' ? searchParams.error : null;
+  const errorMessage =
+    error === 'invalid'
+      ? 'Invalid Credentials, Padawan.'
+      : error === 'server'
+        ? 'Login is temporarily unavailable. Please try again.'
+        : null;
 
   return (
     <Reveal className="w-full max-w-md">
@@ -24,11 +32,17 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
             <KeyRound className="h-5 w-5 text-primary" />
             Log in
           </CardTitle>
-          <CardDescription>Use any name/password for the hackathon demo.</CardDescription>
+          <CardDescription>Enter your Full Name and Password to access the dashboard.</CardDescription>
         </CardHeader>
         <CardContent>
           <form action={loginAction} className="space-y-5">
             <input type="hidden" name="next" value={nextPath} />
+
+            {errorMessage ? (
+              <p className="rounded-md border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-sm text-amber-100">
+                {errorMessage}
+              </p>
+            ) : null}
 
             <div className="space-y-2">
               <label htmlFor="fullName" className="text-sm font-medium leading-none">

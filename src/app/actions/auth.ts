@@ -8,6 +8,16 @@ import {
   HOLOCRON_PROFILE_COOKIE,
   HOLOCRON_SESSION_COOKIE,
 } from '@/lib/holocron-auth';
+import { createUser, findUser, verifyPassword } from '@/lib/user-store';
+
+type AuthErrorCode = 'invalid' | 'exists' | 'server';
+
+function redirectWithError(pathname: string, nextPath: string, error: AuthErrorCode): never {
+  const url = new URL(pathname, 'http://localhost');
+  url.searchParams.set('next', nextPath);
+  url.searchParams.set('error', error);
+  redirect(`${url.pathname}?${url.searchParams.toString()}`);
+}
 
 function sanitizeNextPath(value: FormDataEntryValue | null): string {
   const defaultPath = '/dashboard';
@@ -49,11 +59,21 @@ export async function loginAction(formData: FormData) {
   const password = formData.get('password');
 
   if (!isNonEmptyString(fullName) || !isNonEmptyString(password)) {
-    redirect('/login');
+    redirectWithError('/login', nextPath, 'invalid');
   }
 
-  setHolocronSession({ fullName });
-  redirect(nextPath);
+  try {
+    const user = findUser(fullName);
+    if (!user || !verifyPassword(password, user.passwordHash)) {
+      redirectWithError('/login', nextPath, 'invalid');
+    }
+
+    setHolocronSession({ fullName: user.fullName });
+    redirect(nextPath);
+  } catch (err) {
+    console.error('Login failed:', err);
+    redirectWithError('/login', nextPath, 'server');
+  }
 }
 
 export async function signupAction(formData: FormData) {
@@ -64,7 +84,19 @@ export async function signupAction(formData: FormData) {
   const password = formData.get('password');
 
   if (!isNonEmptyString(fullName) || !isNonEmptyString(classYear) || !isNonEmptyString(password)) {
-    redirect('/signup');
+    redirectWithError('/signup', nextPath, 'invalid');
+  }
+
+  try {
+    createUser(fullName, password);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '';
+    if (message.toLowerCase().includes('exists')) {
+      redirectWithError('/signup', nextPath, 'exists');
+    }
+
+    console.error('Signup failed:', err);
+    redirectWithError('/signup', nextPath, 'server');
   }
 
   setHolocronSession({ fullName, classYear });
