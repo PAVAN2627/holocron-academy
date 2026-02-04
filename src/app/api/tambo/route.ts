@@ -70,11 +70,33 @@ function safeStringifyError(err: unknown): string {
   if (typeof err === 'string') return err;
   if (err instanceof Error) return `${err.name}: ${err.message}`;
 
-  try {
-    return JSON.stringify(err);
-  } catch {
-    return String(err);
+  if (err && typeof err === 'object') {
+    const anyErr = err as {
+      name?: unknown;
+      message?: unknown;
+      code?: unknown;
+      status?: unknown;
+      statusCode?: unknown;
+    };
+
+    const name = typeof anyErr.name === 'string' ? anyErr.name : 'Error';
+    const message = typeof anyErr.message === 'string' ? anyErr.message : '';
+    const code = typeof anyErr.code === 'string' ? anyErr.code : null;
+    const status =
+      typeof anyErr.status === 'number'
+        ? anyErr.status
+        : typeof anyErr.statusCode === 'number'
+          ? anyErr.statusCode
+          : null;
+
+    const suffix = [code ? `code=${code}` : null, status != null ? `status=${status}` : null]
+      .filter((value): value is string => Boolean(value))
+      .join(' ');
+
+    return `${name}${message ? `: ${message}` : ''}${suffix ? ` (${suffix})` : ''}`;
   }
+
+  return String(err);
 }
 
 function isAzureContentFilterError(err: unknown): boolean {
@@ -155,6 +177,7 @@ export async function POST(req: Request) {
         agentId: HOLOCRON_AGENT_ID,
         params: {
           ...chatParams,
+          // Ensure the safe prompt takes precedence by removing prior system messages on retry.
           messages: [createSafeSystemMessage(), ...chatParams.messages.filter((message) => message.role !== 'system')],
         },
       });

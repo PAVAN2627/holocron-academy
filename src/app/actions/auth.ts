@@ -8,7 +8,7 @@ import {
   HOLOCRON_PROFILE_COOKIE,
   HOLOCRON_SESSION_COOKIE,
 } from '@/lib/holocron-auth';
-import { createUser, findUser, verifyPassword } from '@/lib/user-store';
+import { createUser, findUser, UserStoreError, verifyPassword } from '@/lib/user-store';
 
 type AuthErrorCode = 'invalid' | 'exists' | 'server';
 
@@ -92,8 +92,7 @@ export async function signupAction(formData: FormData) {
     setHolocronSession({ fullName: user.fullName, classYear });
     redirect(nextPath);
   } catch (err) {
-    const message = err instanceof Error ? err.message : '';
-    if (message.toLowerCase().includes('exists')) {
+    if (err instanceof UserStoreError && err.code === 'user_exists') {
       redirectWithError('/signup', nextPath, 'exists');
     }
 

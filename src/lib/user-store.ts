@@ -10,6 +10,18 @@ export type StoredUser = {
   passwordHash: string;
 };
 
+export type UserStoreErrorCode = 'user_exists' | 'invalid_name';
+
+export class UserStoreError extends Error {
+  readonly code: UserStoreErrorCode;
+
+  constructor(code: UserStoreErrorCode, message: string) {
+    super(message);
+    this.name = 'UserStoreError';
+    this.code = code;
+  }
+}
+
 type PasswordHashParts = {
   salt: Buffer;
   hash: Buffer;
@@ -137,7 +149,7 @@ export async function createUser(fullName: string, password: string): Promise<St
     const trimmedFullName = fullName.trim().slice(0, 80);
     const normalized = normalizeFullName(trimmedFullName);
     if (!normalized) {
-      throw new Error('Full name is required.');
+      throw new UserStoreError('invalid_name', 'Full name is required.');
     }
 
     const seedUsers = readSeedUsers();
@@ -146,7 +158,7 @@ export async function createUser(fullName: string, password: string): Promise<St
       seedUsers.some((user) => user.fullNameNormalized === normalized) ||
       localUsers.some((user) => user.fullNameNormalized === normalized)
     ) {
-      throw new Error('User already exists.');
+      throw new UserStoreError('user_exists', 'User already exists.');
     }
 
     const user: StoredUser = {

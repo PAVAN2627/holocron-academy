@@ -48,7 +48,14 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
               <label htmlFor="fullName" className="text-sm font-medium leading-none">
                 Full Name
               </label>
-              <Input id="fullName" name="fullName" placeholder="e.g. Leia Organa" autoComplete="name" required />
+              <Input
+                id="fullName"
+                name="fullName"
+                placeholder="e.g. Leia Organa"
+                autoComplete="name"
+                maxLength={80}
+                required
+              />
             </div>
 
             <div className="space-y-2">

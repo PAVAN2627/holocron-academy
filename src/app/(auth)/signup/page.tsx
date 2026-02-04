@@ -50,7 +50,14 @@ export default function SignupPage({ searchParams }: SignupPageProps) {
               <label htmlFor="fullName" className="text-sm font-medium leading-none">
                 Full Name
               </label>
-              <Input id="fullName" name="fullName" placeholder="e.g. Luke Skywalker" autoComplete="name" required />
+              <Input
+                id="fullName"
+                name="fullName"
+                placeholder="e.g. Luke Skywalker"
+                autoComplete="name"
+                maxLength={80}
+                required
+              />
             </div>
 
             <div className="space-y-2">
