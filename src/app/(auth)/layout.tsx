@@ -8,11 +8,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 py-10">
       <header className="mb-10 flex flex-wrap items-center justify-between gap-3">
         <Link href="/" className="flex items-center gap-2">
-          <Shield className="h-5 w-5 text-sky-200" />
+          <Shield className="h-5 w-5 text-primary" />
           <span className="text-sm font-medium tracking-tight">Holocron Academy</span>
         </Link>
 
-        <Badge variant="secondary">Secure Sector</Badge>
+        <Badge variant="secondary">Student Access</Badge>
       </header>
 
       <div className="flex flex-1 items-center justify-center">{children}</div>

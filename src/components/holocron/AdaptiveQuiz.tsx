@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { z } from 'zod';
 
 import { Badge } from '@/components/ui/badge';
@@ -48,7 +48,17 @@ export const adaptiveQuizPropsSchema = z.object({
     .describe('Fallback lesson if the user scores below the passing threshold'),
 });
 
-export type AdaptiveQuizProps = z.input<typeof adaptiveQuizPropsSchema>;
+export type AdaptiveQuizCompletion = {
+  correct: number;
+  total: number;
+  percent: number;
+  passed: boolean;
+  missedQuestionIds: string[];
+};
+
+export type AdaptiveQuizProps = z.input<typeof adaptiveQuizPropsSchema> & {
+  onCompleted?: (completion: AdaptiveQuizCompletion) => void;
+};
 
 export function AdaptiveQuiz({
   title = 'Adaptive Quiz',
@@ -56,11 +66,25 @@ export function AdaptiveQuiz({
   passingScorePercent = 60,
   questions,
   remediation,
+  onCompleted,
 }: AdaptiveQuizProps) {
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [submitted, setSubmitted] = useState(false);
   const [sithModeEnabled, setSithModeEnabled] = useState(false);
   const [sithUnlocked, setSithUnlocked] = useState(false);
+  const completionNotifiedRef = useRef(false);
+
+  const questionsFingerprint = useMemo(() => {
+    return questions.map((question) => question.id).join('|');
+  }, [questions]);
+
+  useEffect(() => {
+    setAnswers({});
+    setSubmitted(false);
+    setSithModeEnabled(false);
+    setSithUnlocked(false);
+    completionNotifiedRef.current = false;
+  }, [questionsFingerprint]);
 
   const score = useMemo(() => {
     const total = questions.length;
@@ -80,6 +104,24 @@ export function AdaptiveQuiz({
   }, [answers, questions, score]);
 
   const hasMissedQuestion = submitted && missed.length > 0;
+
+  useEffect(() => {
+    if (!submitted) {
+      completionNotifiedRef.current = false;
+      return;
+    }
+
+    if (!score || completionNotifiedRef.current) return;
+    completionNotifiedRef.current = true;
+
+    onCompleted?.({
+      correct: score.correct,
+      total: score.total,
+      percent: score.percent,
+      passed: score.percent >= passingScorePercent,
+      missedQuestionIds: missed.map((question) => question.id),
+    });
+  }, [missed, onCompleted, passingScorePercent, score, submitted]);
 
   useEffect(() => {
     if (!sithUnlocked && hasMissedQuestion) {
@@ -103,26 +145,32 @@ export function AdaptiveQuiz({
   const statusBadgeVariant = submitted ? (shouldRemediate ? 'destructive' : 'secondary') : 'secondary';
   const statusBadgeClassName = cn(
     isSithTheme && 'border-destructive/55 bg-destructive/10 text-destructive-foreground',
-    !isSithTheme && !shouldRemediate && 'border-sky-500/30 bg-sky-500/10 text-sky-100'
+    !isSithTheme && !shouldRemediate && 'border-primary/25 bg-primary/10 text-foreground'
   );
 
   const sithToggleLabel = `Sith Mode: ${sithModeEnabled ? 'On' : 'Off'}`;
   const sithToggleVariant = isSithTheme ? 'destructive' : 'outline';
   const sithToggleClassName = cn(
-    !isSithTheme && 'border-sky-500/30 text-sky-100 hover:bg-sky-500/10',
+    !isSithTheme && 'border-primary/25 text-foreground hover:bg-primary/10',
     !sithUnlocked && 'cursor-not-allowed opacity-60'
   );
 
-  const choiceHoverClassName = isSithTheme ? 'hover:bg-destructive/10' : 'hover:bg-sky-500/10';
-  const choiceSelectedClassName = isSithTheme ? 'border-destructive/60 bg-destructive/10' : 'border-sky-400/60 bg-sky-500/10';
-  const choiceCorrectRevealClassName = isSithTheme ? 'border-destructive/60' : 'border-sky-400/60';
+  const choiceHoverClassName = isSithTheme ? 'hover:bg-destructive/10' : 'hover:bg-primary/10';
+  const choiceSelectedClassName = isSithTheme ? 'border-destructive/60 bg-destructive/10' : 'border-primary/35 bg-primary/10';
+  const choiceCorrectRevealClassName = isSithTheme ? 'border-destructive/60' : 'border-primary/35';
 
   return (
-    <Card terminal className={cn(isSithTheme ? 'border-destructive/55' : 'border-sky-500/30')}>
+    <Card
+      terminal
+      className={cn(
+        'bg-white/5 backdrop-blur-xl',
+        isSithTheme ? 'border-destructive/45' : 'border-white/10'
+      )}
+    >
       <CardHeader>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <CardTitle className={cn('truncate', isSithTheme ? 'text-destructive' : 'text-sky-100')}>{title}</CardTitle>
+            <CardTitle className={cn('truncate', isSithTheme ? 'text-destructive' : 'text-foreground')}>{title}</CardTitle>
             {description ? <CardDescription>{description}</CardDescription> : null}
           </div>
           <div className="flex items-center gap-2">
@@ -173,7 +221,7 @@ export function AdaptiveQuiz({
                         setAnswers((prev) => ({ ...prev, [q.id]: choiceIndex }));
                       }}
                       className={cn(
-                        'rounded-md border bg-card px-3 py-2 text-left text-sm transition-colors',
+                        'rounded-md border border-white/10 bg-white/5 px-3 py-2 text-left text-sm transition-colors',
                         choiceHoverClassName,
                         isSelected && choiceSelectedClassName,
                         submitted && !isCorrect && choiceIndex === q.correctIndex && choiceCorrectRevealClassName,
@@ -187,7 +235,7 @@ export function AdaptiveQuiz({
               </div>
 
               {submitted && (q.explanation || q.lessonSlide) ? (
-                <div className="rounded-md border bg-muted/20 p-3 text-sm">
+                <div className="rounded-md border border-white/10 bg-white/5 p-3 text-sm">
                   {q.explanation ? <p className="text-muted-foreground">{q.explanation}</p> : null}
                   {q.lessonSlide ? (
                     <p className="mt-2 text-muted-foreground">

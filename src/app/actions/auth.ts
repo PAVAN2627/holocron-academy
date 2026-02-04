@@ -4,13 +4,15 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import {
-  HOLOCRON_FACTION_COOKIE,
+  encodeHolocronProfile,
+  HOLOCRON_PROFILE_COOKIE,
   HOLOCRON_SESSION_COOKIE,
-  type HolocronFaction,
 } from '@/lib/holocron-auth';
 
 function sanitizeNextPath(value: FormDataEntryValue | null): string {
   const defaultPath = '/dashboard';
+  // Only allow redirects into the authenticated dashboard surface.
+  // Extend this list when new protected areas are added.
   const allowedPrefixes = ['/dashboard'];
 
   if (typeof value !== 'string') return defaultPath;
@@ -22,7 +24,7 @@ function sanitizeNextPath(value: FormDataEntryValue | null): string {
   return trimmed;
 }
 
-function setHolocronSession(faction: HolocronFaction) {
+function setHolocronSession(profile: { fullName: string; classYear?: string }) {
   const store = cookies();
   const cookieOptions = {
     path: '/',
@@ -33,7 +35,7 @@ function setHolocronSession(faction: HolocronFaction) {
   };
 
   store.set(HOLOCRON_SESSION_COOKIE, '1', cookieOptions);
-  store.set(HOLOCRON_FACTION_COOKIE, faction, cookieOptions);
+  store.set(HOLOCRON_PROFILE_COOKIE, encodeHolocronProfile(profile), cookieOptions);
 }
 
 function isNonEmptyString(value: FormDataEntryValue | null): value is string {
@@ -41,40 +43,41 @@ function isNonEmptyString(value: FormDataEntryValue | null): value is string {
 }
 
 export async function loginAction(formData: FormData) {
-  const factionValue = formData.get('faction');
   const nextPath = sanitizeNextPath(formData.get('next'));
 
-  if (factionValue !== 'rebel' && factionValue !== 'imperial') {
+  const fullName = formData.get('fullName');
+  const password = formData.get('password');
+
+  if (!isNonEmptyString(fullName) || !isNonEmptyString(password)) {
     redirect('/login');
   }
 
-  if (!isNonEmptyString(formData.get('callsign')) || !isNonEmptyString(formData.get('passcode'))) {
-    redirect('/login');
+  setHolocronSession({ fullName });
+  redirect(nextPath);
+}
+
+export async function signupAction(formData: FormData) {
+  const nextPath = sanitizeNextPath(formData.get('next'));
+
+  const fullName = formData.get('fullName');
+  const classYear = formData.get('classYear');
+  const password = formData.get('password');
+
+  if (!isNonEmptyString(fullName) || !isNonEmptyString(classYear) || !isNonEmptyString(password)) {
+    redirect('/signup');
   }
 
-  setHolocronSession(factionValue);
+  setHolocronSession({ fullName, classYear });
   redirect(nextPath);
 }
 
 export async function registerAction(formData: FormData) {
-  const factionValue = formData.get('faction');
-  const nextPath = sanitizeNextPath(formData.get('next'));
-
-  if (factionValue !== 'rebel' && factionValue !== 'imperial') {
-    redirect('/register');
-  }
-
-  if (!isNonEmptyString(formData.get('callsign')) || !isNonEmptyString(formData.get('passcode'))) {
-    redirect('/register');
-  }
-
-  setHolocronSession(factionValue);
-  redirect(nextPath);
+  return signupAction(formData);
 }
 
 export async function logoutAction() {
   const store = cookies();
   store.delete(HOLOCRON_SESSION_COOKIE);
-  store.delete(HOLOCRON_FACTION_COOKIE);
+  store.delete(HOLOCRON_PROFILE_COOKIE);
   redirect('/');
 }

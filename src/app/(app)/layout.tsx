@@ -1,46 +1,58 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
-import { Compass, LogOut, Radar } from 'lucide-react';
+import { BarChart3, ClipboardList, LogOut, MessageSquare } from 'lucide-react';
 
 import { logoutAction } from '@/app/actions/auth';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { coerceHolocronFaction, HOLOCRON_FACTION_COOKIE } from '@/lib/holocron-auth';
+import { HOLOCRON_PROFILE_COOKIE, parseHolocronProfile } from '@/lib/holocron-auth';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const faction = coerceHolocronFaction(cookies().get(HOLOCRON_FACTION_COOKIE)?.value);
-  const isImperial = faction === 'imperial';
-  const accentTextClassName = isImperial ? 'text-destructive' : 'text-sky-100';
-  const accentBorderClassName = isImperial ? 'border-destructive/35' : 'border-sky-500/30';
+  const profile = parseHolocronProfile(cookies().get(HOLOCRON_PROFILE_COOKIE)?.value);
 
   return (
     <div className="min-h-screen">
       <div className="mx-auto flex w-full max-w-7xl flex-col md:flex-row">
         <aside
           className={cn(
-            'terminal-overlay border-b bg-background/40 px-4 py-5 md:min-h-screen md:w-64 md:border-b-0 md:border-r',
-            accentBorderClassName
+            'terminal-overlay border-b bg-white/5 px-4 py-5 backdrop-blur-xl md:min-h-screen md:w-72 md:border-b-0 md:border-r',
+            'border-white/10'
           )}
         >
           <div className="space-y-4">
             <div>
-              <p className={cn('text-lg font-semibold tracking-tight', accentTextClassName)}>Holocron Academy</p>
+              <Link href="/" className="text-lg font-semibold tracking-tight text-foreground">
+                Holocron Academy
+              </Link>
               <p className="text-xs text-muted-foreground">
-                Faction: <span className="font-medium text-foreground">{isImperial ? 'Imperial' : 'Rebel'}</span>
+                {profile?.fullName ? (
+                  <span>
+                    Signed in as <span className="font-medium text-foreground">{profile.fullName}</span>
+                  </span>
+                ) : (
+                  <span>Signed in</span>
+                )}
               </p>
+              {profile?.classYear ? <p className="text-xs text-muted-foreground">Class/Year: {profile.classYear}</p> : null}
             </div>
 
             <nav className="grid gap-2">
-              <Button asChild variant="ghost" className="justify-start gap-2">
-                <Link href="/">
-                  <Compass />
-                  Landing
+              <Button asChild variant="secondary" className="justify-start gap-2 bg-white/5 hover:bg-white/10">
+                <Link href="/dashboard#progress">
+                  <BarChart3 className="h-4 w-4" />
+                  My Progress
                 </Link>
               </Button>
-              <Button asChild variant="secondary" className="justify-start gap-2">
-                <Link href="/dashboard">
-                  <Radar />
-                  Dashboard
+              <Button asChild variant="ghost" className="justify-start gap-2">
+                <Link href="/dashboard#quizzes">
+                  <ClipboardList className="h-4 w-4" />
+                  Jedi Trials (Quizzes)
+                </Link>
+              </Button>
+              <Button asChild variant="ghost" className="justify-start gap-2">
+                <Link href="/dashboard#chat">
+                  <MessageSquare className="h-4 w-4" />
+                  Holocron Chat
                 </Link>
               </Button>
             </nav>
@@ -49,12 +61,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <Button
                 type="submit"
                 variant="outline"
-                className={cn(
-                  'w-full justify-start gap-2',
-                  isImperial
-                    ? 'border-destructive/40 text-destructive hover:bg-destructive/10'
-                    : 'border-sky-500/30 text-sky-100 hover:bg-sky-500/10'
-                )}
+                className="w-full justify-start gap-2 border-primary/20 text-foreground hover:bg-white/10"
               >
                 <LogOut />
                 Log out
