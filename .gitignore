@@ -28,6 +28,9 @@ yarn-error.log*
 # local env files
 .env*.local
 
+# local auth store (demo only)
+/src/data/users.local.json
+
 # vercel
 .vercel
 

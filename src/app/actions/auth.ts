@@ -13,10 +13,10 @@ import { createUser, findUser, verifyPassword } from '@/lib/user-store';
 type AuthErrorCode = 'invalid' | 'exists' | 'server';
 
 function redirectWithError(pathname: string, nextPath: string, error: AuthErrorCode): never {
-  const url = new URL(pathname, 'http://localhost');
-  url.searchParams.set('next', nextPath);
-  url.searchParams.set('error', error);
-  redirect(`${url.pathname}?${url.searchParams.toString()}`);
+  const search = new URLSearchParams();
+  search.set('next', nextPath);
+  search.set('error', error);
+  redirect(`${pathname}?${search.toString()}`);
 }
 
 function sanitizeNextPath(value: FormDataEntryValue | null): string {
@@ -88,7 +88,9 @@ export async function signupAction(formData: FormData) {
   }
 
   try {
-    createUser(fullName, password);
+    const user = createUser(fullName, password);
+    setHolocronSession({ fullName: user.fullName, classYear });
+    redirect(nextPath);
   } catch (err) {
     const message = err instanceof Error ? err.message : '';
     if (message.toLowerCase().includes('exists')) {
@@ -98,9 +100,6 @@ export async function signupAction(formData: FormData) {
     console.error('Signup failed:', err);
     redirectWithError('/signup', nextPath, 'server');
   }
-
-  setHolocronSession({ fullName, classYear });
-  redirect(nextPath);
 }
 
 export async function registerAction(formData: FormData) {

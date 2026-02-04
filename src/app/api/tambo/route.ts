@@ -145,6 +145,11 @@ export async function POST(req: Request) {
         throw err;
       }
 
+      console.warn('Retrying chat stream with safe system prompt after Azure rejection.', {
+        status: getErrorStatusCode(err),
+        isContentFilter: isAzureContentFilterError(err),
+      });
+
       stream = await handleChatStream({
         mastra,
         agentId: HOLOCRON_AGENT_ID,

@@ -23,7 +23,7 @@ export function PageTransition({ children, className }: PageTransitionProps) {
         animate={{ opacity: 1, y: 0 }}
         exit={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: -8 }}
         transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.32, ease: 'easeOut' }}
-        className={cn(className)}
+        className={cn('h-full w-full', className)}
       >
         {children}
       </motion.div>

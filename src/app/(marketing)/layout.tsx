@@ -26,7 +26,9 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
         </nav>
       </header>
 
-      <PageTransition className="flex-1">{children}</PageTransition>
+      <div className="flex-1">
+        <PageTransition>{children}</PageTransition>
+      </div>
     </div>
   );
 }

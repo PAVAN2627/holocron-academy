@@ -15,7 +15,10 @@ type PasswordHashParts = {
   hash: Buffer;
 };
 
-const USERS_FILE_PATH = path.join(process.cwd(), 'src', 'data', 'users.json');
+// NOTE: This file-based store is intended for hackathon demos only.
+// It is not safe for concurrent or multi-instance deployments.
+const SEED_USERS_FILE_PATH = path.join(process.cwd(), 'src', 'data', 'users.json');
+const LOCAL_USERS_FILE_PATH = path.join(process.cwd(), 'src', 'data', 'users.local.json');
 
 function normalizeFullName(value: string): string {
   return value.trim().toLowerCase();
@@ -47,11 +50,21 @@ export function verifyPassword(password: string, storedHash: string): boolean {
   return timingSafeEqual(derived, parsed.hash);
 }
 
-export function readUsers(): StoredUser[] {
-  const raw = fs.readFileSync(USERS_FILE_PATH, 'utf-8');
+function readUsersFile(filePath: string, { required }: { required: boolean }): StoredUser[] {
+  let raw: string;
+  try {
+    raw = fs.readFileSync(filePath, 'utf-8');
+  } catch (err) {
+    const code = typeof (err as { code?: unknown }).code === 'string' ? (err as { code: string }).code : null;
+    if (!required && code === 'ENOENT') {
+      return [];
+    }
+    throw err;
+  }
+
   const data = JSON.parse(raw) as unknown;
   if (!Array.isArray(data)) {
-    throw new Error('Invalid users.json format. Expected an array.');
+    throw new Error(`Invalid ${path.basename(filePath)} format. Expected an array.`);
   }
 
   return data
@@ -70,8 +83,30 @@ export function readUsers(): StoredUser[] {
     .filter((user): user is StoredUser => Boolean(user));
 }
 
+function readSeedUsers(): StoredUser[] {
+  return readUsersFile(SEED_USERS_FILE_PATH, { required: true });
+}
+
+function readLocalUsers(): StoredUser[] {
+  return readUsersFile(LOCAL_USERS_FILE_PATH, { required: false });
+}
+
+export function readUsers(): StoredUser[] {
+  const users = new Map<string, StoredUser>();
+
+  for (const user of readSeedUsers()) {
+    users.set(user.fullNameNormalized, user);
+  }
+
+  for (const user of readLocalUsers()) {
+    users.set(user.fullNameNormalized, user);
+  }
+
+  return Array.from(users.values());
+}
+
 export function writeUsers(users: StoredUser[]): void {
-  fs.writeFileSync(USERS_FILE_PATH, `${JSON.stringify(users, null, 2)}\n`);
+  fs.writeFileSync(LOCAL_USERS_FILE_PATH, `${JSON.stringify(users, null, 2)}\n`);
 }
 
 export function findUser(fullName: string): StoredUser | null {
@@ -89,8 +124,9 @@ export function createUser(fullName: string, password: string): StoredUser {
     throw new Error('Full name is required.');
   }
 
-  const users = readUsers();
-  if (users.some((user) => user.fullNameNormalized === normalized)) {
+  const seedUsers = readSeedUsers();
+  const localUsers = readLocalUsers();
+  if (seedUsers.some((user) => user.fullNameNormalized === normalized) || localUsers.some((user) => user.fullNameNormalized === normalized)) {
     throw new Error('User already exists.');
   }
 
@@ -100,6 +136,6 @@ export function createUser(fullName: string, password: string): StoredUser {
     passwordHash: hashPassword(password),
   };
 
-  writeUsers([...users, user]);
+  writeUsers([...localUsers, user]);
   return user;
 }
