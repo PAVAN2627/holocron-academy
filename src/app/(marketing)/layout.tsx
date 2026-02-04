@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { GraduationCap, LogIn } from 'lucide-react';
 
+import { PageTransition } from '@/components/motion/PageTransition';
 import { Button } from '@/components/ui/button';
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
@@ -25,7 +26,9 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
         </nav>
       </header>
 
-      <div className="flex-1">{children}</div>
+      <div className="flex-1">
+        <PageTransition>{children}</PageTransition>
+      </div>
     </div>
   );
 }

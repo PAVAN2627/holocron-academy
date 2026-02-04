@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { ClipboardList, LayoutDashboard, LogOut, Orbit } from 'lucide-react';
 
 import { logoutAction } from '@/app/actions/auth';
+import { PageTransition } from '@/components/motion/PageTransition';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { HOLOCRON_PROFILE_COOKIE, parseHolocronProfile } from '@/lib/holocron-auth';
@@ -40,7 +41,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <Button asChild variant="secondary" className="justify-start gap-2 bg-white/5 hover:bg-white/10">
                 <Link href="/dashboard">
                   <LayoutDashboard className="h-4 w-4" />
-                  Dashboard
+                  Lessons
                 </Link>
               </Button>
               <Button asChild variant="ghost" className="justify-start gap-2">
@@ -70,7 +71,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </aside>
 
-        <main className="flex-1 px-6 py-8">{children}</main>
+        <main className="flex-1 px-6 py-8">
+          <PageTransition>{children}</PageTransition>
+        </main>
       </div>
     </div>
   );

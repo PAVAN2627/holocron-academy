@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Shield } from 'lucide-react';
 
+import { PageTransition } from '@/components/motion/PageTransition';
 import { Badge } from '@/components/ui/badge';
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
@@ -15,7 +16,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <Badge variant="secondary">Student Access</Badge>
       </header>
 
-      <div className="flex flex-1 items-center justify-center">{children}</div>
+      <div className="flex flex-1 items-center justify-center">
+        <PageTransition>{children}</PageTransition>
+      </div>
     </div>
   );
 }
