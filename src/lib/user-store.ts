@@ -37,6 +37,14 @@ const FULL_NAME_MAX_CHARS = 80;
 const SEED_USERS_FILE_PATH = path.join(process.cwd(), 'src', 'data', 'users.json');
 const LOCAL_USERS_FILE_PATH = path.join(process.cwd(), 'src', 'data', 'users.local.json');
 
+const DEMO_MODE_ENABLED = process.env.HOLOCRON_DEMO_MODE === 'true';
+
+if (process.env.NODE_ENV === 'production' && !DEMO_MODE_ENABLED) {
+  console.warn(
+    '[user-store] File-based auth storage is enabled in production without HOLOCRON_DEMO_MODE=true. This is intended for demos only.'
+  );
+}
+
 function canonicalizeFullName(value: string): { fullName: string; normalized: string } {
   const fullName = value.trim().slice(0, FULL_NAME_MAX_CHARS);
   return {
@@ -135,7 +143,9 @@ export function readUsers(): StoredUser[] {
 
 export function writeUsers(users: StoredUser[]): void {
   try {
-    fs.writeFileSync(LOCAL_USERS_FILE_PATH, `${JSON.stringify(users, null, 2)}\n`);
+    const payload = `${JSON.stringify(users, null, 2)}\n`;
+    fs.writeFileSync(LOCAL_USERS_FILE_PATH, payload, { mode: 0o600 });
+    fs.chmodSync(LOCAL_USERS_FILE_PATH, 0o600);
   } catch (err) {
     console.error('Failed to persist local users file.', err);
     throw err;
