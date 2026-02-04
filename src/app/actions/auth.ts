@@ -12,10 +12,8 @@ import {
 
 function sanitizeNextPath(value: FormDataEntryValue | null): string {
   if (typeof value !== 'string') return '/dashboard';
-  if (!value.startsWith('/')) return '/dashboard';
-  if (value.startsWith('//')) return '/dashboard';
-  if (value.startsWith('/api')) return '/dashboard';
-  return value;
+  if (value === '/dashboard' || value.startsWith('/dashboard/')) return value;
+  return '/dashboard';
 }
 
 function setHolocronSession(faction: HolocronFaction) {

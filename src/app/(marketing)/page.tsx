@@ -20,13 +20,13 @@ export default function LandingPage() {
 
           <div className="flex flex-wrap gap-3">
             <Button asChild className="gap-2">
-              <Link href="/dashboard">
+              <Link href="/login?next=/dashboard">
                 Enter the Academy
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
             <Button asChild variant="outline">
-              <Link href="/register">Create an account</Link>
+              <Link href="/register?next=/dashboard">Create an account</Link>
             </Button>
           </div>
         </div>
