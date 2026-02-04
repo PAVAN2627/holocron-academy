@@ -15,6 +15,9 @@ type PasswordHashParts = {
   hash: Buffer;
 };
 
+const PASSWORD_SALT_BYTES = 16;
+const PASSWORD_HASH_BYTES = 64;
+
 // NOTE: This file-based store is intended for hackathon demos only.
 // It is not safe for concurrent or multi-instance deployments.
 const SEED_USERS_FILE_PATH = path.join(process.cwd(), 'src', 'data', 'users.json');
@@ -32,13 +35,14 @@ function parsePasswordHash(value: string): PasswordHashParts | null {
   const salt = Buffer.from(parts[1] ?? '', 'base64');
   const hash = Buffer.from(parts[2] ?? '', 'base64');
 
-  if (salt.length === 0 || hash.length === 0) return null;
+  if (salt.length !== PASSWORD_SALT_BYTES) return null;
+  if (hash.length !== PASSWORD_HASH_BYTES) return null;
   return { salt, hash };
 }
 
 export function hashPassword(password: string): string {
-  const salt = randomBytes(16);
-  const hash = scryptSync(password, salt, 64);
+  const salt = randomBytes(PASSWORD_SALT_BYTES);
+  const hash = scryptSync(password, salt, PASSWORD_HASH_BYTES);
   return `scrypt:${salt.toString('base64')}:${hash.toString('base64')}`;
 }
 
