@@ -43,15 +43,29 @@ function resolveDatabasePath(): string {
   if (typeof raw === 'string') {
     const trimmed = raw.trim();
     if (trimmed.length > 0) {
-      return path.isAbsolute(trimmed) ? trimmed : path.join(process.cwd(), trimmed);
+      const resolved = path.isAbsolute(trimmed) ? trimmed : path.join(process.cwd(), trimmed);
+
+      try {
+        fs.mkdirSync(path.dirname(resolved), { recursive: true });
+      } catch (err) {
+        console.warn(`[auth] Failed to ensure auth database directory at ${path.dirname(resolved)}.`, err);
+      }
+
+      return resolved;
     }
   }
 
-  if (process.env.VERCEL) {
-    return path.join(os.tmpdir(), 'holocron-db.json');
+  const resolved = process.env.VERCEL
+    ? path.join(os.tmpdir(), 'holocron-db.json')
+    : path.join(process.cwd(), 'src', 'lib', 'db.json');
+
+  try {
+    fs.mkdirSync(path.dirname(resolved), { recursive: true });
+  } catch (err) {
+    console.warn(`[auth] Failed to ensure auth database directory at ${path.dirname(resolved)}.`, err);
   }
 
-  return path.join(process.cwd(), 'src', 'lib', 'db.json');
+  return resolved;
 }
 
 const DB_FILE_PATH = resolveDatabasePath();
@@ -202,12 +216,7 @@ function writeDatabase(database: AuthDatabase): void {
     } catch (err) {
       const code = typeof (err as { code?: unknown }).code === 'string' ? (err as { code: string }).code : null;
       if (code === 'EEXIST' || code === 'EPERM') {
-        try {
-          fs.rmSync(DB_FILE_PATH, { force: true });
-        } catch (removeErr) {
-          console.warn(`[auth] Failed to remove existing auth database at ${DB_FILE_PATH}.`, removeErr);
-        }
-        fs.renameSync(tmpPath, DB_FILE_PATH);
+        fs.copyFileSync(tmpPath, DB_FILE_PATH);
         return;
       }
       throw err;
