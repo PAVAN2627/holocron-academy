@@ -71,11 +71,16 @@ export async function POST(req: Request) {
     ...(trigger ? { trigger } : {}),
   };
 
-  const stream = await handleChatStream({
-    mastra,
-    agentId: HOLOCRON_AGENT_ID,
-    params: chatParams,
-  });
+  try {
+    const stream = await handleChatStream({
+      mastra,
+      agentId: HOLOCRON_AGENT_ID,
+      params: chatParams,
+    });
 
-  return createUIMessageStreamResponse({ stream });
+    return createUIMessageStreamResponse({ stream });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error.';
+    return new Response(`Failed to start chat stream: ${message}`, { status: 500 });
+  }
 }

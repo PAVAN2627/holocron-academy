@@ -1,11 +1,15 @@
 import { Agent } from '@mastra/core/agent';
 import { createAzure } from '@ai-sdk/azure';
+import type { MastraModelConfig } from '@mastra/core/llm';
 
 export const HOLOCRON_AGENT_ID = 'holocronAgent' as const;
 
-let cachedModel: ReturnType<ReturnType<typeof createAzure>> | null = null;
+let cachedModel: MastraModelConfig | null = null;
 
 function normalizeAzureBaseURL(endpoint: string): string {
+  // Supports both canonical Azure endpoints (e.g. `https://<resource>.openai.azure.com`) and
+  // already-normalized values (e.g. `https://<resource>.openai.azure.com/openai` or
+  // `https://<resource>.openai.azure.com/openai/v1`).
   let baseURL = endpoint.trim().replace(/\/+$/, '');
 
   if (baseURL.endsWith('/openai/v1')) {
