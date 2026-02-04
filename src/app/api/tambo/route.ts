@@ -40,8 +40,16 @@ export async function POST(req: Request) {
     return new Response('Mastra /api/tambo route requires Node.js >= 22.13.0.', { status: 500 });
   }
 
-  if (!process.env.OPENAI_API_KEY) {
-    return new Response('Server misconfiguration: OPENAI_API_KEY is not set.', { status: 500 });
+  if (!process.env.AZURE_OPENAI_API_KEY) {
+    return new Response('Server misconfiguration: AZURE_OPENAI_API_KEY is not set.', { status: 500 });
+  }
+
+  if (!process.env.AZURE_OPENAI_ENDPOINT) {
+    return new Response('Server misconfiguration: AZURE_OPENAI_ENDPOINT is not set.', { status: 500 });
+  }
+
+  if (!process.env.AZURE_OPENAI_DEPLOYMENT) {
+    return new Response('Server misconfiguration: AZURE_OPENAI_DEPLOYMENT is not set.', { status: 500 });
   }
 
   let params: unknown;
