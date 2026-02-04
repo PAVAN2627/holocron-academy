@@ -6,6 +6,7 @@ import { z } from 'zod';
 
 import { mastra } from '@/mastra';
 import { HOLOCRON_AGENT_ID } from '@/mastra/agents/holocron-agent';
+import { assertAzureOpenAIConfig, getAzureOpenAIChatModel } from '@/lib/azure-openai';
 
 export const runtime = 'nodejs';
 
@@ -40,8 +41,12 @@ export async function POST(req: Request) {
     return new Response('Mastra /api/tambo route requires Node.js >= 22.13.0.', { status: 500 });
   }
 
-  if (!process.env.OPENAI_API_KEY) {
-    return new Response('Server misconfiguration: OPENAI_API_KEY is not set.', { status: 500 });
+  try {
+    assertAzureOpenAIConfig();
+    getAzureOpenAIChatModel();
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Server misconfiguration.';
+    return new Response(message, { status: 500 });
   }
 
   let params: unknown;
@@ -63,11 +68,16 @@ export async function POST(req: Request) {
     ...(trigger ? { trigger } : {}),
   };
 
-  const stream = await handleChatStream({
-    mastra,
-    agentId: HOLOCRON_AGENT_ID,
-    params: chatParams,
-  });
+  try {
+    const stream = await handleChatStream({
+      mastra,
+      agentId: HOLOCRON_AGENT_ID,
+      params: chatParams,
+    });
 
-  return createUIMessageStreamResponse({ stream });
+    return createUIMessageStreamResponse({ stream });
+  } catch (err) {
+    console.error('Failed to start chat stream:', err);
+    return new Response('Failed to start chat stream.', { status: 500 });
+  }
 }

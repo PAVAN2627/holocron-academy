@@ -12,6 +12,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ai-sdk/azure": "^3.0.26",
     "@mastra/ai-sdk": "^1.0.3",
     "@mastra/core": "^1.1.0",
     "@modelcontextprotocol/sdk": "^1.25.3",
