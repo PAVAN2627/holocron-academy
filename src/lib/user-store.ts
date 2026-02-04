@@ -29,14 +29,19 @@ type PasswordHashParts = {
 
 const PASSWORD_SALT_BYTES = 16;
 const PASSWORD_HASH_BYTES = 64;
+const FULL_NAME_MAX_CHARS = 80;
 
 // NOTE: This file-based store is intended for hackathon demos only.
 // It is not safe for concurrent or multi-instance deployments.
 const SEED_USERS_FILE_PATH = path.join(process.cwd(), 'src', 'data', 'users.json');
 const LOCAL_USERS_FILE_PATH = path.join(process.cwd(), 'src', 'data', 'users.local.json');
 
-function normalizeFullName(value: string): string {
-  return value.trim().toLowerCase();
+function canonicalizeFullName(value: string): { fullName: string; normalized: string } {
+  const fullName = value.trim().slice(0, FULL_NAME_MAX_CHARS);
+  return {
+    fullName,
+    normalized: fullName.toLowerCase(),
+  };
 }
 
 function parsePasswordHash(value: string): PasswordHashParts | null {
@@ -125,6 +130,8 @@ export function writeUsers(users: StoredUser[]): void {
   fs.writeFileSync(LOCAL_USERS_FILE_PATH, `${JSON.stringify(users, null, 2)}\n`);
 }
 
+// NOTE: `createUser` uses sync file I/O, but keeps an async API so it can be
+// swapped for a real database-backed implementation without changing callers.
 let createUserQueue: Promise<void> = Promise.resolve();
 
 function withCreateUserLock<T>(fn: () => T): Promise<T> {
@@ -137,7 +144,7 @@ function withCreateUserLock<T>(fn: () => T): Promise<T> {
 }
 
 export function findUser(fullName: string): StoredUser | null {
-  const normalized = normalizeFullName(fullName);
+  const normalized = canonicalizeFullName(fullName).normalized;
   if (!normalized) return null;
 
   const users = readUsers();
@@ -146,8 +153,7 @@ export function findUser(fullName: string): StoredUser | null {
 
 export async function createUser(fullName: string, password: string): Promise<StoredUser> {
   return withCreateUserLock(() => {
-    const trimmedFullName = fullName.trim().slice(0, 80);
-    const normalized = normalizeFullName(trimmedFullName);
+    const { fullName: trimmedFullName, normalized } = canonicalizeFullName(fullName);
     if (!normalized) {
       throw new UserStoreError('invalid_name', 'Full name is required.');
     }

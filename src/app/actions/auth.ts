@@ -92,8 +92,14 @@ export async function signupAction(formData: FormData) {
     setHolocronSession({ fullName: user.fullName, classYear });
     redirect(nextPath);
   } catch (err) {
-    if (err instanceof UserStoreError && err.code === 'user_exists') {
-      redirectWithError('/signup', nextPath, 'exists');
+    if (err instanceof UserStoreError) {
+      if (err.code === 'user_exists') {
+        redirectWithError('/signup', nextPath, 'exists');
+      }
+
+      if (err.code === 'invalid_name') {
+        redirectWithError('/signup', nextPath, 'invalid');
+      }
     }
 
     console.error('Signup failed:', err);
