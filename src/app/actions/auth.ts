@@ -11,11 +11,13 @@ import {
 
 function sanitizeNextPath(value: FormDataEntryValue | null): string {
   const defaultPath = '/dashboard';
+  const allowedPrefixes = ['/dashboard'];
 
   if (typeof value !== 'string') return defaultPath;
   const trimmed = value.trim();
   if (!trimmed.startsWith('/') || trimmed.startsWith('//')) return defaultPath;
   if (trimmed.startsWith('/api')) return defaultPath;
+  if (!allowedPrefixes.some((prefix) => trimmed === prefix || trimmed.startsWith(`${prefix}/`))) return defaultPath;
 
   return trimmed;
 }
