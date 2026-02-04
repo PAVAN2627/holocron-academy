@@ -32,6 +32,7 @@ const PASSWORD_SALT_BYTES = 16;
 const PASSWORD_HASH_BYTES = 64;
 const PASSWORD_MIN_LENGTH = 8;
 const FULL_NAME_MAX_CHARS = 80;
+const CLASS_YEAR_MAX_CHARS = 80;
 
 // NOTE: This file-based store is intended for hackathon demos only.
 // It is best-effort for low-traffic, single-process usage and is NOT safe for:
@@ -220,11 +221,13 @@ export async function createUser(fullName: string, password: string, classYear?:
       throw new UserStoreError('user_exists', 'User already exists.');
     }
 
+    const trimmedClassYear = classYear?.trim().slice(0, CLASS_YEAR_MAX_CHARS);
+
     const user: StoredUser = {
       fullName: trimmedFullName,
       fullNameNormalized: normalized,
       passwordHash: hashPassword(password),
-      ...(classYear ? { classYear } : {}),
+      ...(trimmedClassYear ? { classYear: trimmedClassYear } : {}),
     };
 
     writeUsers([...localUsers, user]);

@@ -42,6 +42,13 @@ const chatParamsSchema: z.ZodType<ChatStreamHandlerParams<UIMessage>> = z
 const SAFE_SYSTEM_PROMPT =
   'Generate a Star Wars quiz but avoid any aggressive or violent terminology to bypass content filters.';
 
+function findLastIndex<T>(items: readonly T[], predicate: (item: T) => boolean): number {
+  for (let index = items.length - 1; index >= 0; index -= 1) {
+    if (predicate(items[index]!)) return index;
+  }
+  return -1;
+}
+
 function getErrorStatusCode(err: unknown): number | null {
   if (!err || typeof err !== 'object') return null;
 
@@ -66,6 +73,9 @@ function getErrorStatusCode(err: unknown): number | null {
   return null;
 }
 
+/**
+* Summarize an error for server logs. Do not expose this string directly to clients.
+*/
 function safeStringifyError(err: unknown): string {
   if (typeof err === 'string') return err;
   if (err instanceof Error) return `${err.name}: ${err.message}`;
@@ -107,7 +117,7 @@ function isAzureContentFilterError(err: unknown): boolean {
 function shouldRetryWithSafePrompt(err: unknown): boolean {
   // Single-shot retry: we only retry once with a safe prompt to recover from Azure content filter blocks.
   const status = getErrorStatusCode(err);
-  if (status !== 400) return false;
+  if (status != null && status !== 400 && status !== 403) return false;
   return isAzureContentFilterError(err);
 }
 
@@ -175,7 +185,7 @@ export async function POST(req: Request) {
       });
 
       const safeSystemMessage = createSafeSystemMessage();
-      const lastSystemMessageIndex = chatParams.messages.findLastIndex((message) => message.role === 'system');
+      const lastSystemMessageIndex = findLastIndex(chatParams.messages, (message) => message.role === 'system');
       const retryMessages =
         lastSystemMessageIndex === -1
           ? [safeSystemMessage, ...chatParams.messages]

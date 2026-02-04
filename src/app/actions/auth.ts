@@ -14,6 +14,7 @@ import { createUser, findUser, UserStoreError, verifyPassword } from '@/lib/user
 type AuthErrorCode = 'invalid' | 'invalid_name' | 'invalid_password' | 'exists' | 'server';
 
 function redirectWithError(pathname: string, nextPath: string, error: AuthErrorCode): never {
+  // `nextPath` must be the result of `sanitizeNextPath` (to avoid open redirects).
   const search = new URLSearchParams();
   search.set('next', nextPath);
   search.set('error', error);
