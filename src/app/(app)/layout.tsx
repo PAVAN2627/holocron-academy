@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
-import { BarChart3, ClipboardList, LogOut, MessageSquare } from 'lucide-react';
+import { ClipboardList, LayoutDashboard, LogOut, Orbit } from 'lucide-react';
 
 import { logoutAction } from '@/app/actions/auth';
 import { Button } from '@/components/ui/button';
@@ -38,21 +38,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
             <nav className="grid gap-2">
               <Button asChild variant="secondary" className="justify-start gap-2 bg-white/5 hover:bg-white/10">
-                <Link href="/dashboard#progress">
-                  <BarChart3 className="h-4 w-4" />
-                  My Progress
+                <Link href="/dashboard">
+                  <LayoutDashboard className="h-4 w-4" />
+                  Dashboard
                 </Link>
               </Button>
               <Button asChild variant="ghost" className="justify-start gap-2">
-                <Link href="/dashboard#quizzes">
+                <Link href="/dashboard#trials">
                   <ClipboardList className="h-4 w-4" />
-                  Jedi Trials (Quizzes)
+                  Trials
                 </Link>
               </Button>
               <Button asChild variant="ghost" className="justify-start gap-2">
-                <Link href="/dashboard#chat">
-                  <MessageSquare className="h-4 w-4" />
-                  Holocron Chat
+                <Link href="/dashboard#galaxy-map">
+                  <Orbit className="h-4 w-4" />
+                  Galaxy Map
                 </Link>
               </Button>
             </nav>
