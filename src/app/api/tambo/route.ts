@@ -10,6 +10,9 @@ import { assertAzureOpenAIConfig } from '@/lib/azure-openai';
 
 export const runtime = 'nodejs';
 
+// Hard cap to prevent multi-step agent loops from running indefinitely.
+const CHAT_MAX_STEPS = 5;
+
 const jsonValueSchema: z.ZodType<unknown> = z.lazy(() =>
   z.union([z.string(), z.number(), z.boolean(), z.null(), z.array(jsonValueSchema), z.record(jsonValueSchema)])
 );
@@ -63,6 +66,7 @@ export async function POST(req: Request) {
   const { messages, resumeData, trigger } = parsed.data;
   const chatParams: ChatStreamHandlerParams<UIMessage> = {
     messages,
+    maxSteps: CHAT_MAX_STEPS,
     ...(resumeData ? { resumeData } : {}),
     ...(trigger ? { trigger } : {}),
   };
