@@ -180,6 +180,10 @@ export function findUser(fullName: string): StoredUser | null {
 }
 
 export async function createUser(fullName: string, password: string, classYear?: string): Promise<StoredUser> {
+  if (process.env.NODE_ENV === 'production' && !DEMO_MODE_ENABLED) {
+    throw new Error('File-based user store is disabled in production unless HOLOCRON_DEMO_MODE=true.');
+  }
+
   return withCreateUserLock(() => {
     const { fullName: trimmedFullName, normalized } = canonicalizeFullName(fullName);
     if (!normalized) {

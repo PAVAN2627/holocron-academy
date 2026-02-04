@@ -99,16 +99,17 @@ export async function signupAction(formData: FormData) {
     redirect(nextPath);
   } catch (err) {
     if (err instanceof UserStoreError) {
-      if (err.code === 'user_exists') {
-        redirectWithError('/signup', nextPath, 'exists');
-      }
-
-      if (err.code === 'invalid_name') {
-        redirectWithError('/signup', nextPath, 'invalid_name');
-      }
-
-      if (err.code === 'invalid_password') {
-        redirectWithError('/signup', nextPath, 'invalid_password');
+      switch (err.code) {
+        case 'user_exists':
+          redirectWithError('/signup', nextPath, 'exists');
+        case 'invalid_name':
+          redirectWithError('/signup', nextPath, 'invalid_name');
+        case 'invalid_password':
+          redirectWithError('/signup', nextPath, 'invalid_password');
+        default: {
+          const _exhaustive: never = err.code;
+          throw new Error(`Unhandled user store error code: ${_exhaustive}`);
+        }
       }
     }
 
