@@ -45,7 +45,7 @@ export function DroidCodeLab({ title = 'Droid Code Lab', instructions, starterCo
   }
 
   return (
-    <Card className="terminal-overlay border-sky-500/30">
+    <Card terminal className="border-sky-500/30">
       <CardHeader>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">

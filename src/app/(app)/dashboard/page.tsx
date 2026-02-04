@@ -1,31 +1,37 @@
+import { cookies } from 'next/headers';
+
 import { AdaptiveQuiz } from '@/components/holocron/AdaptiveQuiz';
-import { DroidCodeLab } from '@/components/holocron/DroidCodeLab';
 import { GalaxyModule } from '@/components/holocron/GalaxyModule';
 import { TamboChat } from '@/components/tambo/TamboChat';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { coerceHolocronFaction, HOLOCRON_FACTION_COOKIE } from '@/lib/holocron-auth';
+import { cn } from '@/lib/utils';
 
-export default function Home() {
+export default function DashboardPage() {
   const hasTamboKey = Boolean(process.env.NEXT_PUBLIC_TAMBO_API_KEY);
+  const faction = coerceHolocronFaction(cookies().get(HOLOCRON_FACTION_COOKIE)?.value);
+  const accentTextClassName = faction === 'imperial' ? 'text-destructive' : 'text-sky-100';
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-8 px-6 py-10 font-[family-name:var(--font-geist-sans)]">
+    <div className="space-y-8">
       <header className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="space-y-1">
-            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Holocron Academy</h1>
+            <h1 className={cn('text-2xl font-semibold tracking-tight sm:text-3xl', accentTextClassName)}>
+              Dashboard
+            </h1>
             <p className="text-sm text-muted-foreground">
-              Next.js 14 + Tailwind + shadcn/ui + Tambo. The terminal is alive.
+              Your hub for modules, quizzes, and the Holocron Terminal.
             </p>
           </div>
 
           <div className="flex items-center gap-2">
-            <Badge variant="secondary">App Router</Badge>
-            <Badge variant="secondary">Generative UI</Badge>
+            <Badge variant="secondary">GalaxyModule</Badge>
+            <Badge variant="secondary">AdaptiveQuiz</Badge>
           </div>
         </div>
-
         <Separator />
       </header>
 
@@ -43,7 +49,7 @@ export default function Home() {
           />
 
           <AdaptiveQuiz
-            title="Adaptive Quiz (demo)"
+            title="Adaptive Quiz"
             passingScorePercent={60}
             questions={[
               {
@@ -54,7 +60,8 @@ export default function Home() {
                 explanation: 'This repo uses create-next-app with the src directory enabled.',
                 lessonSlide: {
                   title: 'App Router refresher',
-                  content: "The App Router lives in src/app/. Each folder can define a route segment, and layout/page files compose your UI.",
+                  content:
+                    'The App Router lives in src/app/. Each folder can define a route segment, and layout/page files compose your UI.',
                 },
               },
               {
@@ -74,20 +81,8 @@ export default function Home() {
             ]}
             remediation={{
               title: 'Lesson: Passing the basics',
-              content:
-                'Review the explanations above and try again. The Holocron adapts when you need extra context.',
+              content: 'Review the explanations above and try again. The Holocron adapts when you need extra context.',
             }}
-          />
-
-          <DroidCodeLab
-            instructions="Type a syntax error to see it highlighted in Sith Red."
-            starterCode={[
-              'const add = (a, b) => a + b;',
-              'console.log(add(2, 3));',
-              '',
-              '// Try breaking it:',
-              "// console.log(add(2, '3'));",
-            ].join('\n')}
           />
         </section>
 
@@ -95,11 +90,11 @@ export default function Home() {
           {hasTamboKey ? (
             <TamboChat />
           ) : (
-            <Card className="terminal-overlay border-sky-500/30">
+            <Card terminal className="border-sky-500/30">
               <CardHeader>
-                <CardTitle>Tambo setup</CardTitle>
+                <CardTitle>Holocron Terminal</CardTitle>
                 <CardDescription>
-                  To enable the Holocron Terminal, add a Tambo API key to your environment.
+                  To enable Generative UI in the terminal, add a Tambo API key to your environment.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -110,8 +105,8 @@ export default function Home() {
                   NEXT_PUBLIC_TAMBO_API_KEY=your_key_here
                 </pre>
                 <p className="text-sm text-muted-foreground">
-                  Once set, restart <span className="font-mono text-foreground">pnpm dev</span> and ask for an interactive
-                  quiz or progress tracker.
+                  Restart <span className="font-mono text-foreground">pnpm dev</span> and ask for an interactive quiz
+                  or progress tracker.
                 </p>
               </CardContent>
             </Card>

@@ -118,7 +118,7 @@ export function AdaptiveQuiz({
   const choiceCorrectRevealClassName = isSithTheme ? 'border-destructive/60' : 'border-sky-400/60';
 
   return (
-    <Card className={cn('terminal-overlay', isSithTheme ? 'border-destructive/55' : 'border-sky-500/30')}>
+    <Card terminal className={cn(isSithTheme ? 'border-destructive/55' : 'border-sky-500/30')}>
       <CardHeader>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
