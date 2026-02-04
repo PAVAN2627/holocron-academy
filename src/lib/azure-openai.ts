@@ -1,11 +1,12 @@
-import { AzureOpenAIGateway } from '@mastra/core/llm';
+import { createAzure } from '@ai-sdk/azure';
 import type { MastraModelConfig } from '@mastra/core/llm';
 import { createHash } from 'crypto';
 
+// Single-deployment Azure OpenAI config used by the @ai-sdk/azure provider.
+// If you need multiple deployments, introduce a mapping layer instead of expanding this type.
 type AzureOpenAIEnv = {
   apiKey: string;
   endpoint: string;
-  apiVersion: string;
   deployment: string;
   resourceName: string;
 };
@@ -21,11 +22,6 @@ function getAzureOpenAIEnv(): AzureOpenAIEnv {
     throw new Error('Server misconfiguration: AZURE_OPENAI_ENDPOINT is not set.');
   }
 
-  const apiVersion = process.env.AZURE_OPENAI_API_VERSION;
-  if (!apiVersion) {
-    throw new Error('Server misconfiguration: AZURE_OPENAI_API_VERSION is not set.');
-  }
-
   const deployment = process.env.AZURE_OPENAI_DEPLOYMENT;
   if (!deployment) {
     throw new Error('Server misconfiguration: AZURE_OPENAI_DEPLOYMENT is not set.');
@@ -33,7 +29,7 @@ function getAzureOpenAIEnv(): AzureOpenAIEnv {
 
   const resourceName = extractAzureResourceName(endpoint);
 
-  return { apiKey, endpoint, apiVersion, deployment, resourceName };
+  return { apiKey, endpoint, deployment, resourceName };
 }
 
 function extractAzureResourceName(endpoint: string): string {
@@ -60,8 +56,6 @@ function extractAzureResourceName(endpoint: string): string {
   return resourceName;
 }
 
-let cachedGateway: { cacheKey: string; gateway: AzureOpenAIGateway } | null = null;
-let cachedModel: { cacheKey: string; model: MastraModelConfig } | null = null;
 
 function getApiKeyHash(apiKey: string): string {
   // Use a short, non-reversible hash of the API key in cache keys to avoid keeping
@@ -69,38 +63,17 @@ function getApiKeyHash(apiKey: string): string {
   return createHash('sha256').update(apiKey).digest('hex').slice(0, 16);
 }
 
-type AzureCacheKeyInput = Pick<AzureOpenAIEnv, 'apiKey' | 'apiVersion' | 'deployment' | 'resourceName'>;
+type AzureCacheKeyInput = Pick<AzureOpenAIEnv, 'apiKey' | 'deployment' | 'resourceName'>;
 
-function getEnvCacheKey({ apiKey, apiVersion, deployment, resourceName }: AzureCacheKeyInput): string {
-  return `${resourceName}::${apiVersion}::${deployment}::${getApiKeyHash(apiKey)}`;
+function getEnvCacheKey({ apiKey, deployment, resourceName }: AzureCacheKeyInput): string {
+  return `${resourceName}::${deployment}::${getApiKeyHash(apiKey)}`;
 }
 
-function getAzureOpenAIGatewayFromEnv({ apiKey, apiVersion, deployment, resourceName }: AzureOpenAIEnv): AzureOpenAIGateway {
-  const cacheKey = getEnvCacheKey({ apiKey, apiVersion, deployment, resourceName });
-
-  if (cachedGateway?.cacheKey === cacheKey) {
-    return cachedGateway.gateway;
-  }
-
-  const gateway = new AzureOpenAIGateway({
-    apiKey,
-    resourceName,
-    apiVersion,
-    deployments: [deployment],
-  });
-
-  cachedGateway = { cacheKey, gateway };
-  return gateway;
-}
+let cachedModel: { cacheKey: string; model: MastraModelConfig } | null = null;
 
 export function assertAzureOpenAIConfig(): void {
-  // Validates Azure OpenAI env vars/endpoint shape and ensures the gateway is constructible.
-  const env = getAzureOpenAIEnv();
-  getAzureOpenAIGatewayFromEnv(env);
-}
-
-export function getAzureOpenAIGateway(): AzureOpenAIGateway {
-  return getAzureOpenAIGatewayFromEnv(getAzureOpenAIEnv());
+  // Validates Azure OpenAI env vars/endpoint shape.
+  getAzureOpenAIEnv();
 }
 
 export async function resolveAzureOpenAIChatModel(): Promise<MastraModelConfig> {
@@ -111,12 +84,13 @@ export async function resolveAzureOpenAIChatModel(): Promise<MastraModelConfig> 
     return cachedModel.model;
   }
 
-  const gateway = getAzureOpenAIGatewayFromEnv(env);
-  const model = await gateway.resolveLanguageModel({
+  const model = createAzure({
     apiKey: env.apiKey,
-    providerId: gateway.id,
-    modelId: env.deployment,
-  });
+    resourceName: env.resourceName,
+  }).chat(env.deployment);
+
+  // MastraModelConfig accepts AI SDK language models; @ai-sdk/azure returns one here.
+
   cachedModel = { cacheKey, model };
   return model;
 }

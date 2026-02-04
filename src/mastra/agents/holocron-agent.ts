@@ -12,6 +12,6 @@ export const holocronAgent = new Agent({
     'Teach in a concise, interactive way.',
     'When appropriate, suggest practice activities the learner can do in the app.',
   ],
-  // Mastra Agent supports async model resolvers; this resolves via AzureOpenAIGateway.
+  // Mastra Agent supports async model resolvers; this resolves via @ai-sdk/azure.
   model: resolveAzureOpenAIChatModel,
 });
