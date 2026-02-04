@@ -164,6 +164,7 @@ export function readUsers(): StoredUser[] {
 }
 
 export function writeUsers(users: StoredUser[]): void {
+  ensureDemoStoreEnabled();
   try {
     const payload = `${JSON.stringify(users, null, 2)}\n`;
     fs.writeFileSync(LOCAL_USERS_FILE_PATH, payload, { mode: 0o600 });
@@ -178,6 +179,8 @@ export function writeUsers(users: StoredUser[]): void {
 // swapped for a real database-backed implementation without changing callers.
 let createUserQueue: Promise<void> = Promise.resolve();
 
+// Best-effort lock for a single Node.js process only.
+// It does not provide cross-process safety (e.g. serverless / horizontally scaled deployments).
 function withCreateUserLock<T>(fn: () => T): Promise<T> {
   const next = createUserQueue.then(fn);
   createUserQueue = next.then(
