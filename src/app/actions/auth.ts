@@ -11,7 +11,7 @@ import {
 import { AUTH_REDIRECT_ALLOWED_PREFIXES } from '@/lib/routes';
 import { createUser, findUser, UserStoreError, verifyPassword } from '@/lib/user-store';
 
-type AuthErrorCode = 'invalid' | 'exists' | 'server';
+type AuthErrorCode = 'invalid' | 'invalid_name' | 'invalid_password' | 'exists' | 'server';
 
 function redirectWithError(pathname: string, nextPath: string, error: AuthErrorCode): never {
   const search = new URLSearchParams();
@@ -104,11 +104,11 @@ export async function signupAction(formData: FormData) {
       }
 
       if (err.code === 'invalid_name') {
-        redirectWithError('/signup', nextPath, 'invalid');
+        redirectWithError('/signup', nextPath, 'invalid_name');
       }
 
       if (err.code === 'invalid_password') {
-        redirectWithError('/signup', nextPath, 'invalid');
+        redirectWithError('/signup', nextPath, 'invalid_password');
       }
     }
 

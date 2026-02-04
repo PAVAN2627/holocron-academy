@@ -22,8 +22,12 @@ export default function SignupPage({ searchParams }: SignupPageProps) {
       ? 'An account with that Full Name already exists. Try logging in instead.'
       : error === 'server'
         ? 'Signup is temporarily unavailable. Please try again.'
-        : error === 'invalid'
-          ? 'Please fill out all fields to create your account.'
+        : error === 'invalid_password'
+          ? 'Password must be at least 8 characters.'
+          : error === 'invalid_name'
+            ? 'Please enter a valid Full Name.'
+            : error === 'invalid'
+              ? 'Please check all fields and try again.'
           : null;
 
   return (

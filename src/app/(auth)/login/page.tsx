@@ -18,7 +18,7 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
   const nextPath = typeof searchParams?.next === 'string' ? searchParams.next : '/dashboard';
   const error = typeof searchParams?.error === 'string' ? searchParams.error : null;
   const errorMessage =
-    error === 'invalid'
+    error === 'invalid' || error === 'invalid_name' || error === 'invalid_password'
       ? 'Invalid Credentials, Padawan.'
       : error === 'server'
         ? 'Login is temporarily unavailable. Please try again.'
