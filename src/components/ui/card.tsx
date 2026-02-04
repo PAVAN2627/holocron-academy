@@ -2,14 +2,19 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+  terminal?: boolean
+}
+
 const Card = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
+  CardProps
+>(({ className, terminal = true, ...props }, ref) => (
   <div
     ref={ref}
     className={cn(
-      "terminal-overlay rounded-xl border bg-card text-card-foreground shadow",
+      "rounded-xl border bg-card text-card-foreground shadow",
+      terminal && "terminal-overlay",
       className
     )}
     {...props}

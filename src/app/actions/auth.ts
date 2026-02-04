@@ -11,8 +11,10 @@ import {
 } from '@/lib/holocron-auth';
 
 function sanitizeNextPath(value: FormDataEntryValue | null): string {
+  const allowedPrefixes = ['/dashboard'];
+
   if (typeof value !== 'string') return '/dashboard';
-  if (value === '/dashboard' || value.startsWith('/dashboard/')) return value;
+  if (allowedPrefixes.some((prefix) => value === prefix || value.startsWith(`${prefix}/`))) return value;
   return '/dashboard';
 }
 
@@ -22,6 +24,7 @@ function setHolocronSession(faction: HolocronFaction) {
     path: '/',
     sameSite: 'lax' as const,
     secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
     maxAge: 60 * 60 * 24 * 7,
   };
 
