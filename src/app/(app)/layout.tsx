@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
-import { ClipboardList, LayoutDashboard, LogOut, Orbit } from 'lucide-react';
+import { BookOpen, ClipboardList, LayoutDashboard, LogOut, UserCircle } from 'lucide-react';
 
 import { logoutAction } from '@/app/actions/auth';
 import { PageTransition } from '@/components/motion/PageTransition';
@@ -41,19 +41,25 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <Button asChild variant="secondary" className="justify-start gap-2 bg-white/5 hover:bg-white/10">
                 <Link href="/dashboard">
                   <LayoutDashboard className="h-4 w-4" />
+                  Dashboard
+                </Link>
+              </Button>
+              <Button asChild variant="ghost" className="justify-start gap-2">
+                <Link href="/dashboard#lessons">
+                  <BookOpen className="h-4 w-4" />
                   Lessons
                 </Link>
               </Button>
               <Button asChild variant="ghost" className="justify-start gap-2">
-                <Link href="/dashboard#trials">
+                <Link href="/dashboard#quizzes">
                   <ClipboardList className="h-4 w-4" />
-                  Trials
+                  Quizzes
                 </Link>
               </Button>
               <Button asChild variant="ghost" className="justify-start gap-2">
-                <Link href="/dashboard#galaxy-map">
-                  <Orbit className="h-4 w-4" />
-                  Galaxy Map
+                <Link href="/dashboard#student-profile">
+                  <UserCircle className="h-4 w-4" />
+                  Student Profile
                 </Link>
               </Button>
             </nav>

@@ -19,9 +19,11 @@ export default function SignupPage({ searchParams }: SignupPageProps) {
   const error = typeof searchParams?.error === 'string' ? searchParams.error : null;
   const errorMessage =
     error === 'exists'
-      ? 'An account with that Full Name already exists. Try logging in instead.'
+      ? 'An account with that Email already exists. Try logging in instead.'
       : error === 'server'
         ? 'Signup is temporarily unavailable. Please try again.'
+        : error === 'invalid_email'
+          ? 'Please enter a valid Email address.'
         : error === 'invalid_password'
           ? 'Password must be at least 8 characters.'
           : error === 'invalid_name'
@@ -45,7 +47,7 @@ export default function SignupPage({ searchParams }: SignupPageProps) {
             <input type="hidden" name="next" value={nextPath} />
 
             {errorMessage ? (
-              <p className="rounded-md border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-sm text-amber-100">
+              <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                 {errorMessage}
               </p>
             ) : null}
@@ -65,6 +67,20 @@ export default function SignupPage({ searchParams }: SignupPageProps) {
             </div>
 
             <div className="space-y-2">
+              <label htmlFor="email" className="text-sm font-medium leading-none">
+                Email
+              </label>
+              <Input
+                id="email"
+                name="email"
+                placeholder="e.g. luke@holocron.academy"
+                autoComplete="email"
+                maxLength={200}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
               <label htmlFor="classYear" className="text-sm font-medium leading-none">
                 Class/Year
               </label>
@@ -73,7 +89,6 @@ export default function SignupPage({ searchParams }: SignupPageProps) {
                 name="classYear"
                 placeholder="e.g. Year 2 (IT)"
                 autoComplete="organization-title"
-                required
               />
             </div>
 

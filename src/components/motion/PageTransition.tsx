@@ -19,9 +19,9 @@ export function PageTransition({ children, className }: PageTransitionProps) {
     <AnimatePresence mode="wait" initial={false}>
       <motion.div
         key={pathname}
-        initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: -8 }}
+        initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
         transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.32, ease: 'easeOut' }}
         className={cn('h-full w-full', className)}
       >
