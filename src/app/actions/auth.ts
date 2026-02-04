@@ -4,18 +4,20 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import {
-  coerceHolocronFaction,
   HOLOCRON_FACTION_COOKIE,
   HOLOCRON_SESSION_COOKIE,
   type HolocronFaction,
 } from '@/lib/holocron-auth';
 
 function sanitizeNextPath(value: FormDataEntryValue | null): string {
-  const allowedPrefixes = ['/dashboard'];
+  const defaultPath = '/dashboard';
 
-  if (typeof value !== 'string') return '/dashboard';
-  if (allowedPrefixes.some((prefix) => value === prefix || value.startsWith(`${prefix}/`))) return value;
-  return '/dashboard';
+  if (typeof value !== 'string') return defaultPath;
+  const trimmed = value.trim();
+  if (!trimmed.startsWith('/') || trimmed.startsWith('//')) return defaultPath;
+  if (trimmed.startsWith('/api')) return defaultPath;
+
+  return trimmed;
 }
 
 function setHolocronSession(faction: HolocronFaction) {
@@ -37,26 +39,34 @@ function isNonEmptyString(value: FormDataEntryValue | null): value is string {
 }
 
 export async function loginAction(formData: FormData) {
-  const faction = coerceHolocronFaction(formData.get('faction'));
+  const factionValue = formData.get('faction');
   const nextPath = sanitizeNextPath(formData.get('next'));
+
+  if (factionValue !== 'rebel' && factionValue !== 'imperial') {
+    redirect('/login');
+  }
 
   if (!isNonEmptyString(formData.get('callsign')) || !isNonEmptyString(formData.get('passcode'))) {
     redirect('/login');
   }
 
-  setHolocronSession(faction);
+  setHolocronSession(factionValue);
   redirect(nextPath);
 }
 
 export async function registerAction(formData: FormData) {
-  const faction = coerceHolocronFaction(formData.get('faction'));
+  const factionValue = formData.get('faction');
   const nextPath = sanitizeNextPath(formData.get('next'));
+
+  if (factionValue !== 'rebel' && factionValue !== 'imperial') {
+    redirect('/register');
+  }
 
   if (!isNonEmptyString(formData.get('callsign')) || !isNonEmptyString(formData.get('passcode'))) {
     redirect('/register');
   }
 
-  setHolocronSession(faction);
+  setHolocronSession(factionValue);
   redirect(nextPath);
 }
 

@@ -31,7 +31,7 @@ export default function LandingPage() {
           </div>
         </div>
 
-        <Card className="border-sky-500/30 bg-background/40">
+        <Card terminal className="border-sky-500/30 bg-background/40">
           <CardHeader>
             <CardTitle className="text-sky-100">Transmission</CardTitle>
             <CardDescription>Pick a side. The interface adapts.</CardDescription>
@@ -50,7 +50,7 @@ export default function LandingPage() {
       </section>
 
       <section className="mt-14 grid gap-4 md:grid-cols-3">
-        <Card className="border-sky-500/30 bg-background/30">
+        <Card terminal className="border-sky-500/30 bg-background/30">
           <CardHeader className="space-y-2">
             <div className="flex items-center gap-2 text-sky-100">
               <Radar className="h-5 w-5" />
@@ -60,7 +60,7 @@ export default function LandingPage() {
           </CardHeader>
         </Card>
 
-        <Card className="border-sky-500/30 bg-background/30">
+        <Card terminal className="border-sky-500/30 bg-background/30">
           <CardHeader className="space-y-2">
             <div className="flex items-center gap-2 text-sky-100">
               <Sparkles className="h-5 w-5" />
@@ -70,7 +70,7 @@ export default function LandingPage() {
           </CardHeader>
         </Card>
 
-        <Card className="border-sky-500/30 bg-background/30">
+        <Card terminal className="border-sky-500/30 bg-background/30">
           <CardHeader className="space-y-2">
             <div className="flex items-center gap-2 text-sky-100">
               <Wand2 className="h-5 w-5" />

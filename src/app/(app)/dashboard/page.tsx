@@ -90,7 +90,7 @@ export default function DashboardPage() {
           {hasTamboKey ? (
             <TamboChat />
           ) : (
-            <Card className="border-sky-500/30">
+            <Card terminal className="border-sky-500/30">
               <CardHeader>
                 <CardTitle>Holocron Terminal</CardTitle>
                 <CardDescription>

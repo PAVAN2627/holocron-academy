@@ -13,7 +13,7 @@ export type LessonSlideProps = z.infer<typeof lessonSlidePropsSchema>;
 
 export function LessonSlide({ title, content }: LessonSlideProps) {
   return (
-    <Card className="border-ring/60 bg-muted/10">
+    <Card terminal className="border-ring/60 bg-muted/10">
       <CardHeader>
         <CardTitle className="text-base">{title}</CardTitle>
       </CardHeader>

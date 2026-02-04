@@ -16,7 +16,7 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
   const nextPath = typeof searchParams?.next === 'string' ? searchParams.next : '/dashboard';
 
   return (
-    <Card className="w-full max-w-md border-sky-500/30 bg-background/40">
+    <Card terminal className="w-full max-w-md border-sky-500/30 bg-background/40">
       <CardHeader>
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">

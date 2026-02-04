@@ -16,7 +16,7 @@ export default function RegisterPage({ searchParams }: RegisterPageProps) {
   const nextPath = typeof searchParams?.next === 'string' ? searchParams.next : '/dashboard';
 
   return (
-    <Card className="w-full max-w-md border-sky-500/30 bg-background/40">
+    <Card terminal className="w-full max-w-md border-sky-500/30 bg-background/40">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-sky-100">
           <UserPlus className="h-5 w-5" />
