@@ -10,7 +10,7 @@ export type StoredUser = {
   passwordHash: string;
 };
 
-export type UserStoreErrorCode = 'user_exists' | 'invalid_name';
+export type UserStoreErrorCode = 'user_exists' | 'invalid_name' | 'invalid_password';
 
 export class UserStoreError extends Error {
   readonly code: UserStoreErrorCode;
@@ -29,6 +29,7 @@ type PasswordHashParts = {
 
 const PASSWORD_SALT_BYTES = 16;
 const PASSWORD_HASH_BYTES = 64;
+const PASSWORD_MIN_LENGTH = 8;
 const FULL_NAME_MAX_CHARS = 80;
 
 // NOTE: This file-based store is intended for hackathon demos only.
@@ -95,6 +96,12 @@ function readUsersFile(filePath: string, { required }: { required: boolean }): S
       if (typeof record.fullName !== 'string') return null;
       if (typeof record.fullNameNormalized !== 'string') return null;
       if (typeof record.passwordHash !== 'string') return null;
+      if (!parsePasswordHash(record.passwordHash)) {
+        console.warn(`Skipping user with invalid passwordHash in ${path.basename(filePath)}.`, {
+          fullName: record.fullName,
+        });
+        return null;
+      }
       return {
         fullName: record.fullName,
         fullNameNormalized: record.fullNameNormalized,
@@ -127,7 +134,12 @@ export function readUsers(): StoredUser[] {
 }
 
 export function writeUsers(users: StoredUser[]): void {
-  fs.writeFileSync(LOCAL_USERS_FILE_PATH, `${JSON.stringify(users, null, 2)}\n`);
+  try {
+    fs.writeFileSync(LOCAL_USERS_FILE_PATH, `${JSON.stringify(users, null, 2)}\n`);
+  } catch (err) {
+    console.error('Failed to persist local users file.', err);
+    throw err;
+  }
 }
 
 // NOTE: `createUser` uses sync file I/O, but keeps an async API so it can be
@@ -156,6 +168,10 @@ export async function createUser(fullName: string, password: string): Promise<St
     const { fullName: trimmedFullName, normalized } = canonicalizeFullName(fullName);
     if (!normalized) {
       throw new UserStoreError('invalid_name', 'Full name is required.');
+    }
+
+    if (password.trim().length < PASSWORD_MIN_LENGTH) {
+      throw new UserStoreError('invalid_password', `Password must be at least ${PASSWORD_MIN_LENGTH} characters.`);
     }
 
     const seedUsers = readSeedUsers();

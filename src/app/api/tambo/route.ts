@@ -107,7 +107,8 @@ function isAzureContentFilterError(err: unknown): boolean {
 function shouldRetryWithSafePrompt(err: unknown): boolean {
   // Single-shot retry: we only retry once with a safe prompt to recover from Azure content filter blocks.
   const status = getErrorStatusCode(err);
-  return status === 400 || isAzureContentFilterError(err);
+  if (status !== 400) return false;
+  return isAzureContentFilterError(err);
 }
 
 function createSafeSystemMessage(): UIMessage {

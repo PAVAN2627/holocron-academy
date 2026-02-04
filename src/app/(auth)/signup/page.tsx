@@ -77,7 +77,14 @@ export default function SignupPage({ searchParams }: SignupPageProps) {
               <label htmlFor="password" className="text-sm font-medium leading-none">
                 Password
               </label>
-              <Input id="password" name="password" type="password" autoComplete="new-password" required />
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="new-password"
+                minLength={8}
+                required
+              />
             </div>
 
             <Button type="submit" className="w-full">

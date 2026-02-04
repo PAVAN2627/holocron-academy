@@ -8,6 +8,7 @@ import {
   HOLOCRON_PROFILE_COOKIE,
   HOLOCRON_SESSION_COOKIE,
 } from '@/lib/holocron-auth';
+import { AUTH_REDIRECT_ALLOWED_PREFIXES } from '@/lib/routes';
 import { createUser, findUser, UserStoreError, verifyPassword } from '@/lib/user-store';
 
 type AuthErrorCode = 'invalid' | 'exists' | 'server';
@@ -22,8 +23,8 @@ function redirectWithError(pathname: string, nextPath: string, error: AuthErrorC
 function sanitizeNextPath(value: FormDataEntryValue | null): string {
   const defaultPath = '/dashboard';
   // Only allow redirects into the authenticated dashboard surface.
-  // Extend this list when new protected areas are added.
-  const allowedPrefixes = ['/dashboard'];
+  // Extend `AUTH_REDIRECT_ALLOWED_PREFIXES` when new protected areas are added.
+  const allowedPrefixes = AUTH_REDIRECT_ALLOWED_PREFIXES;
 
   if (typeof value !== 'string') return defaultPath;
   const trimmed = value.trim();
@@ -98,6 +99,10 @@ export async function signupAction(formData: FormData) {
       }
 
       if (err.code === 'invalid_name') {
+        redirectWithError('/signup', nextPath, 'invalid');
+      }
+
+      if (err.code === 'invalid_password') {
         redirectWithError('/signup', nextPath, 'invalid');
       }
     }
