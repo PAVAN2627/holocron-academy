@@ -88,7 +88,7 @@ export async function signupAction(formData: FormData) {
   }
 
   try {
-    const user = createUser(fullName, password);
+    const user = await createUser(fullName, password);
     setHolocronSession({ fullName: user.fullName, classYear });
     redirect(nextPath);
   } catch (err) {

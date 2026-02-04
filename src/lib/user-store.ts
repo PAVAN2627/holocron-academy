@@ -109,6 +109,17 @@ export function writeUsers(users: StoredUser[]): void {
   fs.writeFileSync(LOCAL_USERS_FILE_PATH, `${JSON.stringify(users, null, 2)}\n`);
 }
 
+let createUserQueue: Promise<void> = Promise.resolve();
+
+function withCreateUserLock<T>(fn: () => T): Promise<T> {
+  const next = createUserQueue.then(fn);
+  createUserQueue = next.then(
+    () => undefined,
+    () => undefined
+  );
+  return next;
+}
+
 export function findUser(fullName: string): StoredUser | null {
   const normalized = normalizeFullName(fullName);
   if (!normalized) return null;
@@ -117,25 +128,30 @@ export function findUser(fullName: string): StoredUser | null {
   return users.find((user) => user.fullNameNormalized === normalized) ?? null;
 }
 
-export function createUser(fullName: string, password: string): StoredUser {
-  const trimmedFullName = fullName.trim().slice(0, 80);
-  const normalized = normalizeFullName(trimmedFullName);
-  if (!normalized) {
-    throw new Error('Full name is required.');
-  }
+export async function createUser(fullName: string, password: string): Promise<StoredUser> {
+  return withCreateUserLock(() => {
+    const trimmedFullName = fullName.trim().slice(0, 80);
+    const normalized = normalizeFullName(trimmedFullName);
+    if (!normalized) {
+      throw new Error('Full name is required.');
+    }
 
-  const seedUsers = readSeedUsers();
-  const localUsers = readLocalUsers();
-  if (seedUsers.some((user) => user.fullNameNormalized === normalized) || localUsers.some((user) => user.fullNameNormalized === normalized)) {
-    throw new Error('User already exists.');
-  }
+    const seedUsers = readSeedUsers();
+    const localUsers = readLocalUsers();
+    if (
+      seedUsers.some((user) => user.fullNameNormalized === normalized) ||
+      localUsers.some((user) => user.fullNameNormalized === normalized)
+    ) {
+      throw new Error('User already exists.');
+    }
 
-  const user: StoredUser = {
-    fullName: trimmedFullName,
-    fullNameNormalized: normalized,
-    passwordHash: hashPassword(password),
-  };
+    const user: StoredUser = {
+      fullName: trimmedFullName,
+      fullNameNormalized: normalized,
+      passwordHash: hashPassword(password),
+    };
 
-  writeUsers([...localUsers, user]);
-  return user;
+    writeUsers([...localUsers, user]);
+    return user;
+  });
 }

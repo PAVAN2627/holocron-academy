@@ -155,7 +155,7 @@ export async function POST(req: Request) {
         agentId: HOLOCRON_AGENT_ID,
         params: {
           ...chatParams,
-          messages: [createSafeSystemMessage(), ...chatParams.messages],
+          messages: [createSafeSystemMessage(), ...chatParams.messages.filter((message) => message.role !== 'system')],
         },
       });
     }
