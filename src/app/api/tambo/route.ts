@@ -174,16 +174,23 @@ export async function POST(req: Request) {
         isContentFilter: isAzureContentFilterError(err),
       });
 
+      const safeSystemMessage = createSafeSystemMessage();
+      const lastSystemMessageIndex = chatParams.messages.findLastIndex((message) => message.role === 'system');
+      const retryMessages =
+        lastSystemMessageIndex === -1
+          ? [safeSystemMessage, ...chatParams.messages]
+          : [
+              ...chatParams.messages.slice(0, lastSystemMessageIndex + 1),
+              safeSystemMessage,
+              ...chatParams.messages.slice(lastSystemMessageIndex + 1),
+            ];
+
       stream = await handleChatStream({
         mastra,
         agentId: HOLOCRON_AGENT_ID,
         params: {
           ...chatParams,
-          messages: [
-            createSafeSystemMessage(),
-            ...chatParams.messages.filter((message) => message.role === 'system'),
-            ...chatParams.messages.filter((message) => message.role !== 'system'),
-          ],
+          messages: retryMessages,
         },
       });
     }

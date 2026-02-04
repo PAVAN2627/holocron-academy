@@ -48,6 +48,12 @@ if (process.env.NODE_ENV === 'production' && !DEMO_MODE_ENABLED) {
   );
 }
 
+function ensureDemoStoreEnabled() {
+  if (process.env.NODE_ENV === 'production' && !DEMO_MODE_ENABLED) {
+    throw new Error('File-based user store is disabled in production unless HOLOCRON_DEMO_MODE=true.');
+  }
+}
+
 function canonicalizeFullName(value: string): { fullName: string; normalized: string } {
   const fullName = value.trim().slice(0, FULL_NAME_MAX_CHARS);
   return {
@@ -95,7 +101,16 @@ function readUsersFile(filePath: string, { required }: { required: boolean }): S
     throw err;
   }
 
-  const data = JSON.parse(raw) as unknown;
+  let data: unknown;
+  try {
+    data = JSON.parse(raw) as unknown;
+  } catch (err) {
+    if (!required) {
+      console.warn(`Failed to parse ${path.basename(filePath)}. Ignoring file.`, err);
+      return [];
+    }
+    throw err;
+  }
   if (!Array.isArray(data)) {
     throw new Error(`Invalid ${path.basename(filePath)} format. Expected an array.`);
   }
@@ -134,6 +149,7 @@ function readLocalUsers(): StoredUser[] {
 }
 
 export function readUsers(): StoredUser[] {
+  ensureDemoStoreEnabled();
   const users = new Map<string, StoredUser>();
 
   for (const user of readSeedUsers()) {
@@ -180,9 +196,7 @@ export function findUser(fullName: string): StoredUser | null {
 }
 
 export async function createUser(fullName: string, password: string, classYear?: string): Promise<StoredUser> {
-  if (process.env.NODE_ENV === 'production' && !DEMO_MODE_ENABLED) {
-    throw new Error('File-based user store is disabled in production unless HOLOCRON_DEMO_MODE=true.');
-  }
+  ensureDemoStoreEnabled();
 
   return withCreateUserLock(() => {
     const { fullName: trimmedFullName, normalized } = canonicalizeFullName(fullName);

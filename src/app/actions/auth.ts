@@ -114,7 +114,8 @@ export async function signupAction(formData: FormData) {
         }
         default: {
           const _exhaustive: never = err.code;
-          throw new Error(`Unhandled user store error code: ${_exhaustive}`);
+          console.error('Unhandled user store error code:', _exhaustive);
+          redirectWithError('/signup', nextPath, 'server');
         }
       }
     }
