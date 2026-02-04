@@ -36,6 +36,16 @@ pnpm dev
 
 Open `http://localhost:3000`.
 
+## Auth (hackathon)
+
+The project uses a lightweight JSON auth store for the hackathon.
+
+- By default it reads/writes `src/lib/db.json`.
+- On Vercel it falls back to `os.tmpdir()` so signup/login works in a writable filesystem.
+- You can override the location with `HOLOCRON_DB_PATH` (absolute path, or relative to the project root).
+
+This is intentionally not production-grade auth; it’s just enough to support a clean demo user journey.
+
 ## Tambo integration
 
 We register three components (with Zod prop schemas) in `src/tambo/config.ts`:
