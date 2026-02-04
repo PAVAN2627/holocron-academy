@@ -18,6 +18,8 @@ type QuizProgress = {
   lastPercent: number | null;
 };
 
+// In-memory demo state (not persisted across refreshes).
+
 type DashboardClientProps = {
   hasTamboKey: boolean;
 };

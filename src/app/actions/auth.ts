@@ -11,6 +11,8 @@ import {
 
 function sanitizeNextPath(value: FormDataEntryValue | null): string {
   const defaultPath = '/dashboard';
+  // Only allow redirects into the authenticated dashboard surface.
+  // Extend this list when new protected areas are added.
   const allowedPrefixes = ['/dashboard'];
 
   if (typeof value !== 'string') return defaultPath;

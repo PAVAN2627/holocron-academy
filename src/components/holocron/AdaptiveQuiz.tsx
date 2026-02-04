@@ -74,6 +74,18 @@ export function AdaptiveQuiz({
   const [sithUnlocked, setSithUnlocked] = useState(false);
   const completionNotifiedRef = useRef(false);
 
+  const questionsFingerprint = useMemo(() => {
+    return questions.map((question) => question.id).join('|');
+  }, [questions]);
+
+  useEffect(() => {
+    setAnswers({});
+    setSubmitted(false);
+    setSithModeEnabled(false);
+    setSithUnlocked(false);
+    completionNotifiedRef.current = false;
+  }, [questionsFingerprint]);
+
   const score = useMemo(() => {
     const total = questions.length;
     if (!submitted || total === 0) return null;

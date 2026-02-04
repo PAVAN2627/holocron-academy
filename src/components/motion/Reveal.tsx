@@ -9,6 +9,7 @@ type RevealProps = HTMLMotionProps<'div'> & {
   delay?: number;
 };
 
+// Shared fade-in + slide-up wrapper for page and card reveals.
 export function Reveal({ className, delay = 0, ...props }: RevealProps) {
   const shouldReduceMotion = useReducedMotion();
 

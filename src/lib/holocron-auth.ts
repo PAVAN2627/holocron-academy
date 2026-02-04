@@ -9,6 +9,7 @@ export type HolocronProfile = {
 };
 
 export function encodeHolocronProfile(profile: HolocronProfile): string {
+  // The encoded shape is persisted in user cookies; if it changes, update `parseHolocronProfile` accordingly.
   return JSON.stringify({
     fullName: profile.fullName.trim().slice(0, 80),
     classYear: profile.classYear?.trim().slice(0, 32) || undefined,
