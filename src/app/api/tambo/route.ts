@@ -6,7 +6,7 @@ import { z } from 'zod';
 
 import { mastra } from '@/mastra';
 import { HOLOCRON_AGENT_ID } from '@/mastra/agents/holocron-agent';
-import { assertAzureOpenAIConfig } from '@/lib/azure-openai';
+import { assertAzureOpenAIConfig, getAzureOpenAIChatModel } from '@/lib/azure-openai';
 
 export const runtime = 'nodejs';
 
@@ -43,6 +43,7 @@ export async function POST(req: Request) {
 
   try {
     assertAzureOpenAIConfig();
+    getAzureOpenAIChatModel();
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Server misconfiguration.';
     return new Response(message, { status: 500 });

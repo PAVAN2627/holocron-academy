@@ -38,11 +38,11 @@ function normalizeAzureBaseURL(endpoint: string): string {
 
   if (path === '' || path === '/') {
     url.pathname = '/openai';
-  } else if (path === '/openai' || path === '/openai/v1') {
+  } else if (path.startsWith('/openai')) {
     url.pathname = '/openai';
   } else {
     throw new Error(
-      "Server misconfiguration: AZURE_OPENAI_ENDPOINT must be the Azure resource URL (e.g. 'https://<resource>.openai.azure.com') or include only '/openai' or '/openai/v1'.",
+      "Server misconfiguration: AZURE_OPENAI_ENDPOINT must be the Azure resource URL (e.g. 'https://<resource>.openai.azure.com') or include an '/openai' path under it.",
     );
   }
 
@@ -58,7 +58,8 @@ export function assertAzureOpenAIConfig(): void {
 
 export function getAzureOpenAIChatModel(): MastraModelConfig {
   const { apiKey, endpoint, deployment } = getAzureOpenAIEnv();
-  const cacheKey = `${endpoint}::${deployment}::${apiKey}`;
+  const baseURL = normalizeAzureBaseURL(endpoint);
+  const cacheKey = `${baseURL}::${deployment}`;
 
   if (cachedModel?.cacheKey === cacheKey) {
     return cachedModel.model;
@@ -66,7 +67,7 @@ export function getAzureOpenAIChatModel(): MastraModelConfig {
 
   const azure = createAzure({
     apiKey,
-    baseURL: normalizeAzureBaseURL(endpoint),
+    baseURL,
   });
 
   const model = azure(deployment);
